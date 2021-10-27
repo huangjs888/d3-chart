@@ -1,6 +1,7 @@
 .editorconfig
 .eslintignore
 .gitignore
+.npmignore
 .prettierignore
 stats.json
 node_modules/
