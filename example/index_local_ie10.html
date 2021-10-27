@@ -1,0 +1,185 @@
+<!--
+ * @Author: Huangjs
+ * @Date: 2021-10-25 17:29:05
+ * @LastEditors: Huangjs
+ * @LastEditTime: 2021-10-27 14:13:35
+ * @Description: ******
+-->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>d3-chart</title>
+    <script src="./data.js"></script>
+    <script src="../dist/d3.chart.min.js"></script>
+    <style>
+      html,
+      body {
+        overflow: hidden;
+      }
+      #heatmap,
+      #linegraph {
+        margin-top: 60px;
+        width: 100%;
+        height: 360px;
+      }
+      .x-cross,
+      .y-cross,
+      .tooptip {
+        background: rgba(0, 0, 0, 0.6);
+        color: #fff;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="heatmap"></div>
+    <div id="linegraph"></div>
+    <script>
+      (function () {
+        var data = CHART_DATA;
+        var heatMap = new d3Chart.HeatMap({
+          container: '#heatmap',
+          padding: [20, 20, 36, 62],
+          download: 'png',
+          tooptip: { cross: 'xy' },
+          zoom: {
+            x: {
+              domain: 'x',
+              translate: [-Infinity, Infinity],
+              precision: [1000, 366 * 24 * 60 * 60 * 1000],
+            },
+            y: {
+              domain: 'y',
+              translate: [-5000, 35000],
+              precision: [30, 40000],
+            },
+            doubleZoom: false,
+          },
+          scale: {
+            x: {
+              type: 'time',
+              label: '时间',
+              unit: '',
+              ticks: 10,
+            },
+            y: {
+              type: 'linear',
+              label: '距离',
+              unit: 'm',
+            },
+            z: {
+              label: '值',
+              subLabel: 'CO2',
+              domain: [
+                1,
+                ['#003ddf', '#00acc0', '#5afa00', '#ffff00', '#ffa500', '#ff0000'],
+                [0, 0.2, 0.4, 0.6, 0.8, 1],
+              ],
+              unit: '',
+              format: function (v) {
+                return v;
+              },
+            },
+          },
+        });
+        var lineGraph = new d3Chart.LineGraph({
+          container: '#linegraph',
+          padding: [20, 12, 40, 62],
+          smooth: 1,
+          tooptip: { cross: 'x', onlyOneMerge: true },
+          zoom: {
+            x: {
+              domain: 'x',
+            },
+            y: {
+              domain: 'y',
+            },
+            doubleZoom: true,
+          },
+          scale: {
+            x: {
+              type: 'linear',
+              label: '距离',
+              unit: 'm',
+            },
+            y: {
+              type: 'linear',
+              label: '值',
+              unit: '',
+              nice: true,
+              ticks: 3,
+              format: function (v) {
+                return v;
+              },
+            },
+          },
+        });
+        heatMap.setEvent('dblclick', function (e, data) {
+          if (data) {
+            var x = data.x;
+            var y = data.y;
+            var z = data.z;
+            lineGraph
+              .setData({
+                line: [
+                  {
+                    key: x,
+                    label: x,
+                    color: 'red',
+                    data:
+                      z.map(function (v, i) {
+                        return {
+                          y: v,
+                          x: y[i],
+                        };
+                      }) || [],
+                  },
+                ],
+              })
+              .render(e.transform[1], 'xy');
+          }
+        });
+        var heatData = { x: [], y: [], z: [] };
+        data.forEach(function (par, i) {
+          var time = par.time;
+          var step = par.step;
+          var value = par.value;
+          heatData.x[i] = +time;
+          value.forEach(function (val, j) {
+            if (i === 0) {
+              heatData.y[j] = step * j;
+            }
+            if (!heatData.z[j]) {
+              heatData.z[j] = [];
+            }
+            heatData.z[j][i] = +val;
+          });
+        });
+        heatMap.setData({ heat: heatData }, true);
+        var x0 = heatData.x[0];
+        var zz = heatData.z;
+        var yy = heatData.y;
+        lineGraph.setData(
+          {
+            line: [
+              {
+                key: x0,
+                label: x0,
+                color: 'red',
+                data:
+                  zz.map(function (y, i) {
+                    return {
+                      x: yy[i],
+                      y: y[0],
+                    };
+                  }) || [],
+              },
+            ],
+          },
+          true
+        );
+      })();
+    </script>
+  </body>
+</html>

@@ -1,8 +1,17 @@
-import { format } from 'd3';
-import { HeatMap, LineGraph } from '../index';
-import data from './data';
+/*
+ * @Author: Huangjs
+ * @Date: 2021-03-17 16:23:00
+ * @LastEditors: Huangjs
+ * @LastEditTime: 2021-10-27 14:13:27
+ * @Description: ******
+ */
 
-import './index.css';
+import { format } from 'd3';
+import { HeatMap, LineGraph } from '../src/index';
+import './data';
+import './index.less';
+
+const data = window.CHART_DATA;
 
 const exponentFormat = format('.4~g');
 
@@ -28,20 +37,24 @@ const heatMap = new HeatMap({
     x: {
       type: 'time',
       label: '时间',
-      ticks: 10,
       unit: '',
+      ticks: 10,
     },
     y: {
       type: 'linear',
-      // nice: true,
       label: '距离',
       unit: 'm',
     },
     z: {
+      label: '值',
+      subLabel: 'CO2',
+      domain: [1, ['#003ddf', '#00acc0', '#5afa00', '#ffff00', '#ffa500', '#ff0000'], [0, 0.2, 0.4, 0.6, 0.8, 1]],
+      unit: '',
       format: exponentFormat,
     },
   },
 });
+
 const lineGraph = new LineGraph({
   container: '#linegraph',
   padding: [20, 12, 40, 62],
@@ -54,43 +67,50 @@ const lineGraph = new LineGraph({
     y: {
       domain: 'y',
     },
-    doubleZoom: false,
+    doubleZoom: true,
   },
   scale: {
     x: {
       type: 'linear',
-      // nice: true,
       label: '距离',
       unit: 'm',
     },
     y: {
       type: 'linear',
+      label: '值',
+      unit: '',
       nice: true,
-      ticks: 3,
+      ticks: 5,
       format: exponentFormat,
     },
   },
 });
+
 heatMap.setEvent('dblclick', (e, data) => {
   if (data) {
     const { x, y, z } = data;
     lineGraph
       .setData({
-        line: [{
-          key: x,
-          label: x,
-          color: '#FFB676',
-          data: z.map((v, i) => ({
-            y: v,
-            x: y[i],
-          })) || [],
-        }, ],
+        line: [
+          {
+            key: x,
+            label: x,
+            color: 'red',
+            data:
+              z.map((v, i) => ({
+                y: v,
+                x: y[i],
+              })) || [],
+          },
+        ],
       })
-      .render(e.transform[1], 'y');
+      .render(e.transform[1], 'xy');
   }
 });
+
 const heatData = { x: [], y: [], z: [] };
-data.forEach(({ time, step, value }, i, ) => {
+
+data.forEach(({ time, step, value }, i) => {
   heatData.x[i] = +time;
   value.forEach((val, j) => {
     if (i === 0) {
@@ -102,18 +122,27 @@ data.forEach(({ time, step, value }, i, ) => {
     heatData.z[j][i] = +val;
   });
 });
+
 heatMap.setData({ heat: heatData }, true);
+
 const x0 = heatData.x[0];
 const zz = heatData.z;
 const yy = heatData.y;
-lineGraph.setData({
-  line: [{
-    key: x0,
-    label: x0,
-    color: '#FFB676',
-    data: zz.map((y, i) => ({
-      x: yy[i],
-      y: y[0],
-    })) || [],
-  }]
-}, true);
+
+lineGraph.setData(
+  {
+    line: [
+      {
+        key: x0,
+        label: x0,
+        color: 'red',
+        data:
+          zz.map((y, i) => ({
+            x: yy[i],
+            y: y[0],
+          })) || [],
+      },
+    ],
+  },
+  true
+);
