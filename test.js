@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-10-15 16:12:44
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-10-25 13:37:56
+ * @LastEditTime: 2021-11-04 12:01:53
  * @Description: ******
  */
 
@@ -155,7 +155,7 @@ describe('HeatMap', () => {
     height: 300,
     padding: [20, 20, 36, 62],
     download: 'jpg',
-    tooptip: {},
+    tooptip: { select: 'xy' },
     zoom: {
       x: {
         domain: 'x',
@@ -188,6 +188,7 @@ describe('HeatMap', () => {
     expect(heatMap.download).toEqual({ ext: 'jpg' });
     expect(heatMap.data.heat.x).toEqual([]);
     expect(heatMap.tooptip.cross).toBe('xy');
+    expect(heatMap.tooptip.select).toBe('xy');
     expect(heatMap.zoom.doubleZoom).toBe(false);
     expect(heatMap.scale.x.type).toBe('time');
     expect(heatMap.fontSize).toBe(12);

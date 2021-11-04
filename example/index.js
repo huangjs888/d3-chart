@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-10-27 14:13:27
+ * @LastEditTime: 2021-11-04 14:20:05
  * @Description: ******
  */
 
@@ -19,7 +19,7 @@ const heatMap = new HeatMap({
   container: '#heatmap',
   padding: [20, 20, 36, 62],
   download: 'png',
-  tooptip: { cross: 'xy' },
+  tooptip: { cross: 'xy', select: 'x' },
   zoom: {
     x: {
       domain: 'x',
@@ -87,8 +87,8 @@ const lineGraph = new LineGraph({
 });
 
 heatMap.setEvent('dblclick', (e, data) => {
-  if (data) {
-    const { x, y, z } = data;
+  if (data.xSelect) {
+    const { x, y, z } = data.xSelect;
     lineGraph
       .setData({
         line: [

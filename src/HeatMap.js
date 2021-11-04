@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-10-26 18:09:36
+ * @LastEditTime: 2021-11-04 14:24:15
  * @Description: ******
  */
 
@@ -81,7 +81,7 @@ const matrixAverage = (xFactor, val00, val01, yFactor, val10, val11) => {
       else dxy = ((2 * val00 - val01 - val10) * 2) / 3;
     } else if (val10 === undefined) dxy = ((2 * val11 - val01 - val00) * 2) / 3;
     else dxy = val11 + val00 - val01 - val10;
-    val = val00 + (xFactor || 0) * dx + (yFactor || 0) * (dy + xFactor * dxy);
+    val = val00 + (xFactor || 0) * dx + (yFactor || 0) * (dy + (xFactor || 0) * dxy);
   }
   return val;
 };
@@ -243,10 +243,16 @@ function drawend(zContext, { xScale, yScale }) {
   zContext.restore();
 }
 
-function drawing(zContext, { xScale, yScale }, lineMark) {
+function drawing(zContext, { xScale, yScale }, [lineMarkX, lineMarkY]) {
   if (this.showHeat$) {
-    const xp = xScale(lineMark.datum()) || 0;
-    lineMark.style('left', `${xp}px`).style('visibility', xp < 0 || xp > this.width$ ? 'hidden' : 'visible');
+    if (lineMarkX.node()) {
+      const xp = xScale(lineMarkX.datum()) || 0;
+      lineMarkX.style('left', `${xp}px`).style('visibility', xp < 0 || xp > this.width$ ? 'hidden' : 'visible');
+    }
+    if (lineMarkY.node()) {
+      const yp = yScale(lineMarkY.datum()) || 0;
+      lineMarkY.style('top', `${yp}px`).style('visibility', yp < 0 || yp > this.height$ ? 'hidden' : 'visible');
+    }
     const { canvas, range } = this.tempCanvas$;
     if (range) {
       // 将上一次变换后的图，经过本次变换的变形重新绘制到画布上
@@ -263,13 +269,11 @@ function tipCompute(prevRes, point, scaleAxis) {
   const data = this.data.heat;
   const scaleOpt = this.scale;
   const { cross, average } = this.tooptip;
-  const crossX = cross.indexOf('x') !== -1;
-  const crossY = cross.indexOf('y') !== -1;
-  const xScale = scaleAxis.x ? scaleAxis.x.scale : scaleAxis.x2.scale;
-  const yScale = scaleAxis.y ? scaleAxis.y.scale : scaleAxis.y2.scale;
   let [x0, y0] = point;
   const xyzValue = [];
-  if (this.showHeat$ && crossX && crossY) {
+  if (this.showHeat$ && cross === 'xy') {
+    const xScale = (scaleAxis.x || scaleAxis.x2).scale;
+    const yScale = (scaleAxis.y || scaleAxis.y2).scale;
     let xval = xScale.invert(x0);
     let yval = yScale.invert(y0);
     let zval = 0;
@@ -353,37 +357,74 @@ function updateScale() {
   }
 }
 
-function doubleClick(point, xScale, lineMark) {
-  if (!this.showHeat$) {
-    return null;
-  }
+function doubleClick(point, { xScale, yScale }, [lineMarkX, lineMarkY]) {
   const data = this.data.heat;
-  const { average } = this.tooptip;
-  let [x0] = point;
-  let z = [];
-  let x = xScale.invert(x0);
-  const xi = util.findNearIndex(+x, data.x, !average);
-  if (average) {
-    const [xi0, xi1] = xi;
-    if (xi0 < 0) {
-      z = data.z.map((v) => v[xi1]);
-      x = data.x[xi1];
-      x0 = xScale(x);
-    } else if (xi1 < 0) {
-      z = data.z.map((v) => v[xi0]);
-      x = data.x[xi0];
-      x0 = xScale(x);
-    } else {
-      const xInterp = computeFactor(+x, +data.x[xi0], +data.x[xi1], xi0, xi1);
-      z = data.z.map((v) => matrixAverage(xInterp.factor, v[xInterp.bin0], v[xInterp.bin1]));
+  const { select, average } = this.tooptip;
+  const result = {};
+  if (this.showHeat$) {
+    const selectX = select.indexOf('x') !== -1;
+    const selectY = select.indexOf('y') !== -1;
+    let zval = [];
+    let [x0, y0] = point;
+    if (selectX) {
+      // 竖线
+      let xval = +xScale.invert(x0);
+      let xi = util.findNearIndex(xval, data.x, !average);
+      if (xi.length === 2) {
+        const [xi0, xi1] = xi;
+        if (xi0 < 0) {
+          xi = xi1;
+        } else if (xi1 < 0 || xi0 === xi1) {
+          xi = xi0;
+        }
+      }
+      if (xi.length === 2) {
+        const xval0 = +data.x[xi[0]];
+        const xval1 = +data.x[xi[1]];
+        const rate = (xval - xval0) / (xval1 - xval0);
+        zval = data.z.map((v) => rate * (v[xi[1]] - v[xi[0]]) + v[xi[0]]);
+      } else {
+        xval = data.x[xi];
+        x0 = xScale(xval);
+        zval = data.z.map((v) => v[xi]);
+      }
+      result.xSelect = { x: xval, y: data.y, z: zval };
+      if (lineMarkX.node()) {
+        lineMarkX.style('left', `${x0}px`).style('display', 'block').datum(xval);
+      }
     }
-  } else {
-    z = data.z.map((v) => v[xi]);
-    x = data.x[xi];
-    x0 = xScale(x);
+    if (selectY) {
+      // 横线
+      let yval = +yScale.invert(y0);
+      let yi = util.findNearIndex(yval, data.y, !average);
+      if (yi.length === 2) {
+        const [yi0, yi1] = yi;
+        if (yi0 < 0) {
+          yi = yi1;
+        } else if (yi1 < 0 || yi0 === yi1) {
+          yi = yi0;
+        }
+      }
+      if (yi.length === 2) {
+        const yval0 = +data.y[yi[0]];
+        const yval1 = +data.y[yi[1]];
+        const rate = (yval - yval0) / (yval1 - yval0);
+        zval = data.z[yi[0]].map((v0, i) => {
+          const v1 = data.z[yi[1]][i];
+          return rate * (v1 - v0) + v0;
+        });
+      } else {
+        yval = data.y[yi];
+        y0 = yScale(yval);
+        zval = data.z[yi];
+      }
+      result.ySelect = { x: data.x, y: yval, z: zval };
+      if (lineMarkY.node()) {
+        lineMarkY.style('top', `${y0}px`).style('display', 'block').datum(yval);
+      }
+    }
   }
-  lineMark.style('left', `${x0}px`).style('display', 'block').datum(x);
-  return { x, y: data.y, z };
+  return result;
 }
 
 class HeatMap extends BaseChart {
@@ -400,6 +441,7 @@ class HeatMap extends BaseChart {
         ? false
         : {
             cross: 'xy',
+            select: '',
             average: true,
             ...tooptip,
             compute: (res, ...args) => {
@@ -438,16 +480,24 @@ class HeatMap extends BaseChart {
       .append('text')
       .attr('dx', util.measureSvgText(tempText, this.fontSize) / 2)
       .text(tempText);
-    const lineMark = this.zoomSelection$
-      .append('div')
-      .attr('class', 'line-mark')
-      .style('background', '#fa9305')
-      .style('display', 'none')
-      .style('position', 'absolute')
-      .style('top', 0)
-      .style('left', 0)
-      .style('width', '1px')
-      .style('height', '100%');
+    if (this.tooptip) {
+      const { select } = this.tooptip;
+      select.split('').forEach((key) => {
+        if (key) {
+          this.zoomSelection$
+            .append('div')
+            .attr('class', `${key}-linemark`)
+            .style('background', '#fa9305')
+            .style('display', 'none')
+            .style('position', 'absolute')
+            .style('top', 0)
+            .style('left', 0)
+            .style('width', key === 'x' ? '1px' : '100%')
+            .style('height', key === 'x' ? '100%' : '1px');
+        }
+      });
+    }
+    const lineMark = [this.zoomSelection$.select('.x-linemark'), this.zoomSelection$.select('.y-linemark')];
     const zCanvasParent = this.rootSelection$
       .insert('div', 'svg')
       .style('position', 'absolute')
@@ -471,30 +521,31 @@ class HeatMap extends BaseChart {
     const dblclick$$ = this.dblclick$;
     this.dblclick$ = (e, ...args) => {
       dblclick$$.call(null, e, ...args);
-      const { x } = e.scaleAxis;
-      const xScale = x.scale;
-      return doubleClick.call(this, d3.pointer(e.sourceEvent), xScale, lineMark);
+      const { x, x2, y, y2 } = e.scaleAxis;
+      const xScale = (x || x2).scale;
+      const yScale = (y || y2).scale;
+      return doubleClick.call(this, d3.pointer(e.sourceEvent), { xScale, yScale }, lineMark);
     };
     const contextmenu$$ = this.contextmenu$;
     this.contextmenu$ = (e, ...args) => {
       contextmenu$$.call(null, e, ...args);
-      lineMark.style('display', 'none');
+      lineMark.forEach((lm) => lm.node() && lm.style('display', 'none'));
     };
     const zooming$$ = this.zooming$;
     this.zooming$ = (e, ...args) => {
       zooming$$.call(null, e, ...args);
-      const { x, y } = e.scaleAxis;
-      const xScale = x.scale;
-      const yScale = y.scale;
+      const { x, x2, y, y2 } = e.scaleAxis;
+      const xScale = (x || x2).scale;
+      const yScale = (y || y2).scale;
       drawing.call(this, zContext, { xScale, yScale }, lineMark);
     };
     const zoomend$$ = this.zoomend$;
     this.debounceDrawend$ = util.debounce(drawend, 450, { leading: false, trailing: true });
     this.zoomend$ = (e, ...args) => {
       zoomend$$.call(null, e, ...args);
-      const { x, y } = e.scaleAxis;
-      const xScale = x.scale;
-      const yScale = y.scale;
+      const { x, x2, y, y2 } = e.scaleAxis;
+      const xScale = (x || x2).scale;
+      const yScale = (y || y2).scale;
       this.debounceDrawend$.call(this, zContext, { xScale, yScale });
       if (e.sourceEvent.type === 'call') {
         util.delay(() => {
@@ -516,7 +567,7 @@ class HeatMap extends BaseChart {
     heatLabel.on('click', () => {
       if (this.destroyed) return;
       this.showHeat$ = !this.showHeat$;
-      lineMark.style('display', this.showHeat$ ? 'block' : 'none');
+      lineMark.forEach((lm) => lm.node() && lm.style('display', this.showHeat$ ? 'block' : 'none'));
       heatLabel.attr('fill', !this.showHeat$ ? '#aaaa' : 'currentColor');
       if (this.rendered) {
         this.render();
@@ -545,7 +596,14 @@ class HeatMap extends BaseChart {
             return domains;
           }
     );
-    this.zoomSelection$.select('.line-mark').datum(this.data.heat.x[0]);
+    const lineMarkX = this.zoomSelection$.select('.x-linemark');
+    const lineMarkY = this.zoomSelection$.select('.y-linemark');
+    if (lineMarkX.node()) {
+      lineMarkX.datum(this.data.heat.x[0]);
+    }
+    if (lineMarkY.node()) {
+      lineMarkY.datum(this.data.heat.y[0]);
+    }
     if (render) {
       this.render();
     }
