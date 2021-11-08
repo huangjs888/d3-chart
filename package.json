@@ -1,6 +1,6 @@
 {
   "name": "@huangjs888/d3-chart",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Implement some charts based on d3 library.",
   "main": "lib/index.js",
   "module": "src/index.js",
