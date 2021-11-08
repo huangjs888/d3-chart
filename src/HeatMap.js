@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-11-04 14:24:15
+ * @LastEditTime: 2021-11-08 11:01:14
  * @Description: ******
  */
 
@@ -246,11 +246,11 @@ function drawend(zContext, { xScale, yScale }) {
 function drawing(zContext, { xScale, yScale }, [lineMarkX, lineMarkY]) {
   if (this.showHeat$) {
     if (lineMarkX.node()) {
-      const xp = xScale(lineMarkX.datum()) || 0;
+      const xp = xScale(lineMarkX.datum()) || (!this.scale.x ? this.width$ : 0);
       lineMarkX.style('left', `${xp}px`).style('visibility', xp < 0 || xp > this.width$ ? 'hidden' : 'visible');
     }
     if (lineMarkY.node()) {
-      const yp = yScale(lineMarkY.datum()) || 0;
+      const yp = yScale(lineMarkY.datum()) || (!this.scale.y ? this.height$ : 0);
       lineMarkY.style('top', `${yp}px`).style('visibility', yp < 0 || yp > this.height$ ? 'hidden' : 'visible');
     }
     const { canvas, range } = this.tempCanvas$;
@@ -389,7 +389,7 @@ function doubleClick(point, { xScale, yScale }, [lineMarkX, lineMarkY]) {
         zval = data.z.map((v) => v[xi]);
       }
       result.xSelect = { x: xval, y: data.y, z: zval };
-      if (lineMarkX.node()) {
+      if (lineMarkX.node() && x0 !== 'undefined') {
         lineMarkX.style('left', `${x0}px`).style('display', 'block').datum(xval);
       }
     }
@@ -416,10 +416,10 @@ function doubleClick(point, { xScale, yScale }, [lineMarkX, lineMarkY]) {
       } else {
         yval = data.y[yi];
         y0 = yScale(yval);
-        zval = data.z[yi];
+        zval = data.z[yi] || [];
       }
       result.ySelect = { x: data.x, y: yval, z: zval };
-      if (lineMarkY.node()) {
+      if (lineMarkY.node() && y0 !== 'undefined') {
         lineMarkY.style('top', `${y0}px`).style('display', 'block').datum(yval);
       }
     }
@@ -490,8 +490,8 @@ class HeatMap extends BaseChart {
             .style('background', '#fa9305')
             .style('display', 'none')
             .style('position', 'absolute')
-            .style('top', 0)
-            .style('left', 0)
+            .style('top', !this.scale.y ? this.height$ : 0)
+            .style('left', !this.scale.x ? this.width$ : 0)
             .style('width', key === 'x' ? '1px' : '100%')
             .style('height', key === 'x' ? '100%' : '1px');
         }
