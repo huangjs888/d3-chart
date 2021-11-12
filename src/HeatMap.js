@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-11-08 11:24:44
+ * @LastEditTime: 2021-11-12 10:02:05
  * @Description: ******
  */
 
@@ -247,11 +247,11 @@ function drawing(zContext, { xScale, yScale }, [lineMarkX, lineMarkY]) {
   if (this.showHeat$) {
     if (lineMarkX.node()) {
       const xp = xScale(lineMarkX.datum()) || (!this.scale.x ? this.width$ : 0);
-      lineMarkX.style('left', `${xp}px`).style('display', xp < 0 || xp > this.width$ ? 'none' : 'block');
+      lineMarkX.style('left', `${xp}px`).style('display', xp < 0 || xp >= this.width$ ? 'none' : 'block');
     }
     if (lineMarkY.node()) {
       const yp = yScale(lineMarkY.datum()) || (!this.scale.y ? 0 : this.height$);
-      lineMarkY.style('top', `${yp}px`).style('display', yp < 0 || yp > this.height$ ? 'none' : 'block');
+      lineMarkY.style('top', `${yp}px`).style('display', yp < 0 || yp >= this.height$ ? 'none' : 'block');
     }
     const { canvas, range } = this.tempCanvas$;
     if (range) {
@@ -490,8 +490,8 @@ class HeatMap extends BaseChart {
             .style('background', '#fa9305')
             .style('display', 'none')
             .style('position', 'absolute')
-            .style('top', !this.scale.y ? 0 : this.height$)
-            .style('left', !this.scale.x ? this.width$ : 0)
+            .style('top', !this.scale.y ? 0 : this.height$ - 1)
+            .style('left', !this.scale.x ? this.width$ - 1 : 0)
             .style('width', key === 'x' ? '1px' : '100%')
             .style('height', key === 'x' ? '100%' : '1px');
         }
