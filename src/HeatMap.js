@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-11-12 10:02:05
+ * @LastEditTime: 2021-11-15 14:41:23
  * @Description: ******
  */
 
@@ -349,11 +349,51 @@ function tipCompute(prevRes, point, scaleAxis) {
 
 function updateScale() {
   if (this.scale.z) {
-    const [opacity, range, domain] = this.scale.z.domain || [];
+    const zFormat = this.scale.z.format;
+    let [opacity, range, domain] = this.scale.z.domain || [];
+    opacity = opacity || 0;
+    range = range || ['#fff', '#fff'];
+    domain = domain || [0, 0];
     this.zScale$
-      .range((range || ['#fff', '#fff']).map((c) => d3.color(c).copy({ opacity: opacity || 0 })))
-      .domain(domain || [0, 0])
+      .range(range.map((c) => d3.color(c).copy({ opacity })))
+      .domain(domain)
       .clamp(true); // 设置true可以卡住所给不在domain中的参数生成的数据仍然在range范围内
+    if (this.colorBar) {
+      const gradient = this.rootSelection$.select('linearGradient');
+      const colorBar = this.rootSelection$.select('.heatColorBar');
+      const height = this.height$;
+      const length = range.length - 1;
+      gradient
+        .selectAll('stop')
+        .data(range)
+        .join('stop')
+        .attr('offset', (_, i) => `${(i * 100) / length}%`)
+        .attr('stop-color', (c) => c);
+      colorBar
+        .selectAll('g')
+        .data(range)
+        .join(
+          (enter) => {
+            const tick = enter
+              .append('g')
+              .attr('class', 'tick')
+              .attr('transform', (_, i) => `translate(24,${(i * height) / length})`);
+            tick.append('path').attr('d', 'M0,0 L4,4 L4,-4 Z');
+            tick
+              .append('text')
+              .attr('x', '8')
+              .attr('dy', '0.32em')
+              .attr('text-anchor', 'start')
+              .text((_, i) => zFormat(domain[length - i]));
+            return tick;
+          },
+          (update) => {
+            const text = update.select('text');
+            text.text((_, i) => zFormat(domain[length - i]));
+            return update;
+          }
+        );
+    }
   }
 }
 
@@ -429,10 +469,28 @@ function doubleClick(point, { xScale, yScale }, [lineMarkX, lineMarkY]) {
 
 class HeatMap extends BaseChart {
   constructor(...params) {
-    const { data, tooptip, scale, ...restOptions } = params[0] || {};
+    const { data, tooptip, padding, colorBar, scale, ...restOptions } = params[0] || {};
+    let pad = Array.isArray(padding) ? padding : [];
+    if (colorBar && colorBar.show) {
+      const width = colorBar.width || 0;
+      const pad1 = !util.isNumber(pad[1]) || pad[1] < 0 ? 0 : pad[1];
+      if (!pad.length) {
+        pad = [0, width, 0, 0];
+      } else if (pad.length === 1) {
+        const pad0 = !util.isNumber(pad[0]) || pad[0] < 0 ? 0 : pad[0];
+        pad = [pad0, pad0 + width, pad0, pad0];
+      } else if (pad.length === 2) {
+        pad = [pad[0], pad1 + width, pad[0], pad1];
+      } else if (pad.length === 3) {
+        pad = [pad[0], pad1 + width, pad[2], pad1];
+      } else {
+        pad = [pad[0], pad1 + width, pad[2], pad[3]];
+      }
+    }
     const { heat, ...restData } = data || {};
     super({
       ...restOptions,
+      padding: pad,
       data: {
         heat: !heat ? { x: [], y: [], z: [] } : { x: heat.x || [], y: heat.y || [], z: heat.z || [] },
         ...restData,
@@ -465,6 +523,7 @@ class HeatMap extends BaseChart {
         ...scale,
       },
     });
+    this.colorBar = colorBar;
     this.showHeat$ = true;
     const tempText = `${this.scale.z.label || ''}${this.scale.z.subLabel ? ` ( ${this.scale.z.subLabel} )` : ''}${
       this.scale.z.unit ? ` ( ${this.scale.z.unit} )` : ''
@@ -511,6 +570,32 @@ class HeatMap extends BaseChart {
       .style('height', '100%')
       .attr('width', this.width$)
       .attr('height', this.height$);
+    if (this.colorBar) {
+      const gradientId = util.guid('gradient');
+      this.rootSelection$
+        .select('svg')
+        .select('defs')
+        .append('linearGradient')
+        .attr('id', gradientId)
+        .attr('x1', '0%')
+        .attr('y1', '100%')
+        .attr('x2', '0%')
+        .attr('y2', '0');
+      this.rootSelection$
+        .select('svg')
+        .select('.group')
+        .append('g')
+        .attr('class', 'heatColorBar')
+        .style('display', colorBar.show ? 'block' : 'none')
+        .attr('fill', 'currentColor')
+        .attr('transform', `translate(${this.width$ + this.padding[1] - (this.colorBar.width || 0)},0)`)
+        .append('rect')
+        .attr('x', '0')
+        .attr('y', '0')
+        .attr('width', 24)
+        .attr('height', this.height$)
+        .attr('fill', `url(#${gradientId})`);
+    }
     const zContext = zCanvas.node().getContext('2d');
     this.zScale$ = d3.scaleLinear();
     updateScale.call(this);
@@ -649,7 +734,7 @@ class HeatMap extends BaseChart {
 
   downloadImage() {
     const zCanvas = this.rootSelection$.select('canvas').node();
-    const svgDiv = this.rootSelection$.select('.svg');
+    const svgDiv = this.rootSelection$.select('.actions');
     const left = window.parseInt(svgDiv.style('left'));
     const top = window.parseInt(svgDiv.style('top'));
     super.downloadImage((this.scale.z || {}).label, {

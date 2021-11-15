@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-10-25 17:29:05
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-11-04 14:23:27
+ * @LastEditTime: 2021-11-15 14:19:17
  * @Description: ******
 -->
 <!DOCTYPE html>
@@ -11,6 +11,8 @@
     <meta charset="UTF-8" />
     <title>d3-chart</title>
     <script src="./data.js"></script>
+    <!-- <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script> -->
     <script src="../dist/d3.chart.min.js"></script>
     <style>
       html,
@@ -42,6 +44,7 @@
           container: '#heatmap',
           padding: [20, 20, 36, 62],
           download: 'png',
+          colorBar: { show: true, width: 100 },
           tooptip: { cross: 'xy', select: 'xy' },
           zoom: {
             x: {
@@ -115,8 +118,16 @@
             },
           },
         });
+        var count = 1;
         heatMap.setEvent('dblclick', function (e, data) {
-          console.dir(data);
+          count++;
+          heatMap.setDomain({
+            z: [
+              1,
+              ['#003ddf', '#00acc0', '#5afa00', '#ffff00', '#ffa500', '#ff0000'],
+              [0 * count, 0.2 * count, 0.4 * count, 0.6 * count, 0.8 * count, 1 * count],
+            ],
+          });
           if (data.xSelect) {
             var x = data.xSelect.x;
             var y = data.xSelect.y;

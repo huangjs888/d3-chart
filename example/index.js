@@ -2,11 +2,11 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-11-04 14:20:05
+ * @LastEditTime: 2021-11-15 14:37:03
  * @Description: ******
  */
 
-import { format } from 'd3';
+import { format } from 'd3-format';
 import { HeatMap, LineGraph } from '../src/index';
 import './data';
 import './index.less';
@@ -17,8 +17,9 @@ const exponentFormat = format('.4~g');
 
 const heatMap = new HeatMap({
   container: '#heatmap',
-  padding: [20, 20, 36, 62],
+  padding: [20, 30, 36, 62],
   download: 'png',
+  colorBar: { show: true, width: 100 },
   tooptip: { cross: 'xy', select: 'x' },
   zoom: {
     x: {
@@ -85,8 +86,16 @@ const lineGraph = new LineGraph({
     },
   },
 });
-
+let count = 1;
 heatMap.setEvent('dblclick', (e, data) => {
+  count++;
+  heatMap.setDomain({
+    z: [
+      1,
+      ['#003ddf', '#00acc0', '#5afa00', '#ffff00', '#ffa500', '#ff0000'],
+      [0 * count, 0.2 * count, 0.4 * count, 0.6 * count, 0.8 * count, 1 * count],
+    ],
+  });
   if (data.xSelect) {
     const { x, y, z } = data.xSelect;
     lineGraph

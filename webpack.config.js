@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-10-21 16:11:29
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-10-27 14:52:40
+ * @LastEditTime: 2021-11-12 15:32:20
  * @Description: ******
  */
 
@@ -11,6 +11,18 @@ const resolve = require('path').resolve;
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 module.exports = {
+  /* optimization: {
+    minimize: false,
+    splitChunks: {
+      cacheGroups: {
+        lib: {
+          name: 'lib',
+          chunks: 'initial',
+          test: /[\\/]node_modules[\\/]/,
+        },
+      },
+    },
+  }, */
   devtool: 'source-map',
   entry: {
     'd3.chart': resolve(__dirname, 'src/index.js'),

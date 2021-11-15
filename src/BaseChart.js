@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-10-26 18:25:51
+ * @LastEditTime: 2021-11-15 14:09:05
  * @Description: ******
  */
 
@@ -17,6 +17,28 @@ const lockPath =
   'M508.3 66.3c-128 0-232.7 104.7-232.7 232.7v188.5h94.5V333.3c0-98.7 62-179.5 137.8-179.5 75.8 0 137.8 80.8 137.8 179.5v154.2H741V299c0-128-104.7-232.7-232.7-232.7zM792.3 485.5H223.6c-31.3 0-56.6 25.3-56.6 56.6v408.1c0 31.3 25.3 56.6 56.6 56.6h568.7c31.3 0 56.6-25.3 56.6-56.6V542.1c0-31.3-25.4-56.6-56.6-56.6zM537.8 758.4v98h-59.4v-98.2c-23.6-11.2-40-35.2-40-63.1 0-38.6 31.3-69.9 69.9-69.9 38.6 0 69.9 31.3 69.9 69.9-0.1 28.1-16.6 52.2-40.4 63.3z';
 const unlockPath =
   'M508.3 66.3c-128 0-232.7 104.7-232.7 232.7v188.5h94.5V333.3c0-98.7 62-179.5 137.8-179.5 75.8 0 137.8 80.8 137.8 179.5v0H741V299c0-128-104.7-232.7-232.7-232.7zM792.3 485.5H223.6c-31.3 0-56.6 25.3-56.6 56.6v408.1c0 31.3 25.3 56.6 56.6 56.6h568.7c31.3 0 56.6-25.3 56.6-56.6V542.1c0-31.3-25.4-56.6-56.6-56.6zM537.8 758.4v98h-59.4v-98.2c-23.6-11.2-40-35.2-40-63.1 0-38.6 31.3-69.9 69.9-69.9 38.6 0 69.9 31.3 69.9 69.9-0.1 28.1-16.6 52.2-40.4 63.3z';
+const actionButtons = {
+  download: {
+    label: '下载视图',
+    path: downloadPath,
+    className: 'download',
+  },
+  reset: {
+    label: '重置视图',
+    path: resetPath,
+    className: 'reset',
+  },
+  xlock: {
+    label: 'X轴缩放开关',
+    path: unlockPath,
+    className: 'xlock',
+  },
+  ylock: {
+    label: 'Y轴缩放开关',
+    path: unlockPath,
+    className: 'ylock',
+  },
+};
 const axisType = ['x', 'x2', 'y', 'y2'];
 const scaleType = {
   cat: () => d3.scaleBand(),
@@ -350,31 +372,31 @@ function updateElement(size) {
     group.select('.y2Label').attr('transform', `translate(${zw + padding[1] - 14} ${zh / 2}) rotate(-90)`);
   }
   const svgDiv = this.rootSelection$
-    .select('div.svg')
+    .select('div.actions')
     .style('width', `${zw}px`)
     .style('height', `${zh}px`)
     .style('top', `${padding[0]}px`)
     .style('left', `${padding[3] + 1}px`);
   if (this.zoom.x) {
     svgDiv
-      .select('.xLock')
+      .select('.xlock')
       .style('top', `${zh + padding[2] - 21}px`)
       .style('left', `${zw - 12}px`);
   }
   if (this.zoom.y) {
-    svgDiv.select('.yLock').style('top', '-20px').style('left', `${-padding[3]}px`);
+    svgDiv.select('.ylock').style('top', '-20px').style('left', `${-padding[3]}px`);
   }
   let offset = 5;
   if (this.zoom.x || this.zoom.y) {
     svgDiv
-      .select('.zReset')
+      .select('.reset')
       .style('top', `${-padding[0] - 3}px`)
       .style('left', `${this.scale.y ? zw - offset - 18 : offset}px`);
     offset += 23;
   }
   if (this.download) {
     svgDiv
-      .select('.zDownload')
+      .select('.download')
       .style('top', `${-padding[0] - 3}px`)
       .style('left', `${this.scale.y ? zw - offset - 18 : offset}px`);
     offset += 23;
@@ -389,7 +411,6 @@ function updateElement(size) {
   this.height$ = zh;
 }
 function createElement(container, size) {
-  const pathClipId = util.guid('clip');
   const svgXmlns = 'http://www.w3.org/2000/svg';
   const rootSelection = d3
     .select(container || document.createElement('div'))
@@ -425,6 +446,7 @@ function createElement(container, size) {
         .append('text');
     }
   });
+  const pathClipId = util.guid('clip');
   groupSelection.append('g').attr('class', 'zAxis').attr('clip-path', `url(#${pathClipId})`);
   groupSelection
     .append('g')
@@ -433,7 +455,7 @@ function createElement(container, size) {
     .attr('dominant-baseline', 'text-before-edge');
   const divSelection = rootSelection
     .append('div')
-    .attr('class', 'svg')
+    .attr('class', 'actions')
     .style('position', 'absolute')
     .style('top', 0)
     .style('left', 0);
@@ -447,30 +469,27 @@ function createElement(container, size) {
     .style('height', '100%')
     .style('top', 0)
     .style('left', 0);
-  ['x', 'y', 'z'].forEach((key) => {
-    if (this.zoom[key] || (key === 'z' && (this.zoom.x || this.zoom.y))) {
-      divSelection
-        .append('div')
-        .attr('class', key === 'z' ? 'zReset' : `${key}Lock`)
-        .style('position', 'absolute')
-        .attr('title', key === 'z' ? '重置视图' : `${key.substr(0, 1).toUpperCase()} 轴缩放开关`)
-        .style('font-size', '18px')
-        .append('svg')
-        .attr('xmlns', svgXmlns)
-        .attr('fill', 'currentColor')
-        .attr('viewBox', '0 0 1024 1024')
-        .attr('width', '1em')
-        .attr('height', '1em')
-        .append('path')
-        .attr('d', key === 'z' ? resetPath : unlockPath);
+  const actions = [];
+  if (this.zoom) {
+    if (this.zoom.x) {
+      actions.push(actionButtons.xlock);
     }
-  });
+    if (this.zoom.y) {
+      actions.push(actionButtons.ylock);
+    }
+    if (this.zoom.x || this.zoom.y) {
+      actions.push(actionButtons.reset);
+    }
+  }
   if (this.download) {
+    actions.push(actionButtons.download);
+  }
+  actions.forEach((action) => {
     divSelection
       .append('div')
-      .attr('class', 'zDownload')
+      .attr('class', action.className)
       .style('position', 'absolute')
-      .attr('title', '下载视图')
+      .attr('title', action.label)
       .style('font-size', '18px')
       .append('svg')
       .attr('xmlns', svgXmlns)
@@ -479,8 +498,8 @@ function createElement(container, size) {
       .attr('width', '1em')
       .attr('height', '1em')
       .append('path')
-      .attr('d', downloadPath);
-  }
+      .attr('d', action.path);
+  });
   if (this.tooptip) {
     const { cross } = this.tooptip;
     zoomSelection
@@ -771,27 +790,27 @@ function bindEvents() {
     this.zoomSelection$.on('dblclick.zoom', null);
   }
   if (this.zoom.x) {
-    const xlock = this.rootSelection$.select('.xLock');
+    const xlock = this.rootSelection$.select('.xlock');
     xlock.on('click', () => {
       this.xCanZoom$ = !this.xCanZoom$;
       xlock.select('path').attr('d', this.xCanZoom$ ? unlockPath : lockPath);
     });
   }
   if (this.zoom.y) {
-    const ylock = this.rootSelection$.select('.yLock');
+    const ylock = this.rootSelection$.select('.ylock');
     ylock.on('click', () => {
       this.yCanZoom$ = !this.yCanZoom$;
       ylock.select('path').attr('d', this.yCanZoom$ ? unlockPath : lockPath);
     });
   }
   if (this.zoom.x || this.zoom.y) {
-    this.rootSelection$.select('.zReset').on('click', () => {
+    this.rootSelection$.select('.reset').on('click', () => {
       this.reset$();
       this.reset();
     });
   }
   if (this.download) {
-    this.rootSelection$.select('.zDownload').on('click', () => {
+    this.rootSelection$.select('.download').on('click', () => {
       if (this.download.action) {
         this.download.action(() => {
           this.downloadImage();
