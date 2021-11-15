@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-11-15 15:33:44
+ * @LastEditTime: 2021-11-15 16:11:31
  * @Description: ******
  */
 
@@ -592,7 +592,9 @@ class HeatMap extends BaseChart {
         .attr(
           'transform',
           `translate(${
-            this.width$ + this.padding[1] - ((colorBar.left || 0) + (colorBar.right || 0) + (colorBar.width || 0))
+            this.width$ +
+            this.padding[1] -
+            (this.colorBar.show ? (colorBar.left || 0) + (colorBar.right || 0) + (colorBar.width || 0) : 0)
           },0)`
         )
         .append('rect')
