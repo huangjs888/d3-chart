@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-11-15 14:37:03
+ * @LastEditTime: 2021-11-15 15:40:49
  * @Description: ******
  */
 
@@ -19,7 +19,7 @@ const heatMap = new HeatMap({
   container: '#heatmap',
   padding: [20, 30, 36, 62],
   download: 'png',
-  colorBar: { show: true, width: 100 },
+  colorBar: { show: true, width: 22, left: 0, right: 80 },
   tooptip: { cross: 'xy', select: 'x' },
   zoom: {
     x: {

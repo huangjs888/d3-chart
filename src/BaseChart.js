@@ -814,7 +814,7 @@ function bindEvents() {
       if (this.download.action) {
         this.download.action(() => {
           this.downloadImage();
-        });
+        }, this.rootSelection$);
       } else {
         this.downloadImage();
       }
