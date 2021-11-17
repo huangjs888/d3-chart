@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-11-15 15:40:49
+ * @LastEditTime: 2021-11-17 14:32:11
  * @Description: ******
  */
 
@@ -17,9 +17,9 @@ const exponentFormat = format('.4~g');
 
 const heatMap = new HeatMap({
   container: '#heatmap',
-  padding: [20, 30, 36, 62],
+  padding: [20, 62, 36, 62],
   download: 'png',
-  colorBar: { show: true, width: 22, left: 0, right: 80 },
+  colorBar: { show: true, width: 22, left: 12, right: 50 },
   tooptip: { cross: 'xy', select: 'x' },
   zoom: {
     x: {
@@ -45,6 +45,13 @@ const heatMap = new HeatMap({
       type: 'linear',
       label: '距离',
       unit: 'm',
+    },
+    y2: {
+      type: 'linear',
+      domain: [0, 0.6],
+      format: (v) => Math.round(v * 10000) / 10000,
+      label: '厚度',
+      unit: 'mm',
     },
     z: {
       label: '值',

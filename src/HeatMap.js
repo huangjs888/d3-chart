@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-11-15 16:29:28
+ * @LastEditTime: 2021-11-17 15:12:26
  * @Description: ******
  */
 
@@ -359,18 +359,18 @@ function updateScale() {
       .domain(domain)
       .clamp(true); // 设置true可以卡住所给不在domain中的参数生成的数据仍然在range范围内
     if (this.colorBar) {
-      const gradient = this.rootSelection$.select('linearGradient');
-      const colorBar = this.rootSelection$.select('.heatColorBar');
+      const linearGradient = this.rootSelection$.select('linearGradient');
+      const heatColorBar = this.rootSelection$.select('.heatColorBar');
       const height = this.height$;
       const length = range.length - 1;
-      const width = this.colorBar.width || 0;
-      gradient
+      const width = this.colorBar.width;
+      linearGradient
         .selectAll('stop')
         .data(range)
         .join('stop')
         .attr('offset', (_, i) => `${(i * 100) / length}%`)
         .attr('stop-color', (c) => c);
-      colorBar
+      heatColorBar
         .selectAll('g')
         .data(range)
         .join(
@@ -470,28 +470,21 @@ function doubleClick(point, { xScale, yScale }, [lineMarkX, lineMarkY]) {
 
 class HeatMap extends BaseChart {
   constructor(...params) {
-    const { data, tooptip, padding, colorBar, scale, ...restOptions } = params[0] || {};
-    let pad = Array.isArray(padding) ? padding : [];
-    if (colorBar && colorBar.show) {
-      const width = (colorBar.left || 0) + (colorBar.right || 0) + (colorBar.width || 0);
-      const pad1 = !util.isNumber(pad[1]) || pad[1] < 0 ? 0 : pad[1];
-      if (!pad.length) {
-        pad = [0, width, 0, 0];
-      } else if (pad.length === 1) {
-        const pad0 = !util.isNumber(pad[0]) || pad[0] < 0 ? 0 : pad[0];
-        pad = [pad0, pad0 + width, pad0, pad0];
-      } else if (pad.length === 2) {
-        pad = [pad[0], pad1 + width, pad[0], pad1];
-      } else if (pad.length === 3) {
-        pad = [pad[0], pad1 + width, pad[2], pad1];
-      } else {
-        pad = [pad[0], pad1 + width, pad[2], pad[3]];
+    const { data, tooptip, colorBar, scale, ...restOptions } = params[0] || {};
+    const { heat, ...restData } = data || {};
+    let rWidth = restOptions.rWidth;
+    if (colorBar) {
+      colorBar.show = !!colorBar.show;
+      colorBar.left = util.isNumber(colorBar.left) ? colorBar.left : 0;
+      colorBar.width = util.isNumber(colorBar.width) ? colorBar.width : 0;
+      colorBar.right = util.isNumber(colorBar.right) ? colorBar.right : 0;
+      if (colorBar.show) {
+        rWidth = (util.isNumber(rWidth) ? rWidth : 0) + colorBar.left + colorBar.width + colorBar.right;
       }
     }
-    const { heat, ...restData } = data || {};
     super({
       ...restOptions,
-      padding: pad,
+      rWidth,
       data: {
         heat: !heat ? { x: [], y: [], z: [] } : { x: heat.x || [], y: heat.y || [], z: heat.z || [] },
         ...restData,
@@ -571,7 +564,7 @@ class HeatMap extends BaseChart {
       .style('height', '100%')
       .attr('width', this.width$)
       .attr('height', this.height$);
-    if (this.colorBar) {
+    if (colorBar) {
       const gradientId = util.guid('gradient');
       this.rootSelection$
         .select('svg')
@@ -587,21 +580,13 @@ class HeatMap extends BaseChart {
         .select('.group')
         .append('g')
         .attr('class', 'heatColorBar')
-        .style('display', this.colorBar.show ? 'block' : 'none')
+        .style('display', colorBar.show ? 'block' : 'none')
         .attr('fill', 'currentColor')
-        .attr(
-          'transform',
-          `translate(${
-            this.width$ +
-            this.padding[1] +
-            14 -
-            (this.colorBar.show ? (colorBar.left || 0) + (colorBar.right || 0) + (colorBar.width || 0) : 0)
-          },0)`
-        )
+        .attr('transform', `translate(${this.width$ + this.padding[1] + colorBar.left},0)`)
         .append('rect')
         .attr('x', 0)
         .attr('y', 0)
-        .attr('width', this.colorBar.width || 0)
+        .attr('width', colorBar.width)
         .attr('height', this.height$)
         .attr('fill', `url(#${gradientId})`);
     }
@@ -657,6 +642,14 @@ class HeatMap extends BaseChart {
         .style('left', `${padding[3] + 1}px`);
       zCanvas.attr('width', width).attr('height', height);
       heatLabel.attr('transform', `translate(${this.scale.y ? 10 : width - 10},${this.scale.x2 ? 0 : -padding[0]})`);
+      if (colorBar) {
+        const heatColorBar = this.rootSelection$.select('.heatColorBar');
+        heatColorBar.attr('transform', `translate(${width + padding[1] + colorBar.left},0)`);
+        heatColorBar.select('rect').attr('height', height);
+        const ticks = heatColorBar.selectAll('.tick');
+        const length = ticks.size() - 1;
+        ticks.attr('transform', (_, i) => `translate(${colorBar.width},${(i * height) / length})`);
+      }
     };
     heatLabel.on('click', () => {
       if (this.destroyed) return;

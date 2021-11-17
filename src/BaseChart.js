@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-11-15 14:09:05
+ * @LastEditTime: 2021-11-17 14:31:15
  * @Description: ******
  */
 
@@ -102,7 +102,7 @@ const getDefaultFormat = (type) => {
   }
   return (v) => v;
 };
-const computeSize = (element, { width, height, padding }) => {
+const computeSize = (element, { width, height, padding, rWidth, rHeight }) => {
   let w = width;
   let h = height;
   const style = getComputedStyle(element);
@@ -155,6 +155,8 @@ const computeSize = (element, { width, height, padding }) => {
     width: Math.max(util.isNumber(w) ? w : 1, 1),
     height: Math.max(util.isNumber(h) ? h : 1, 1),
     padding: [top, right, bottom, left],
+    rWidth: util.isNumber(rWidth) ? rWidth : 0,
+    rHeight: util.isNumber(rHeight) ? rHeight : 0,
   };
 };
 const scaleLable = (labelSel, [scale, domain]) => {
@@ -345,9 +347,9 @@ function createZoom() {
   };
 }
 function updateElement(size) {
-  const { width, height, padding } = computeSize(this.rootSelection$.node(), size);
-  let zw = width - padding[3] - padding[1];
-  let zh = height - padding[0] - padding[2];
+  const { width, height, padding, rWidth, rHeight } = computeSize(this.rootSelection$.node(), size);
+  let zw = width - rWidth - padding[3] - padding[1];
+  let zh = height - rHeight - padding[0] - padding[2];
   if (zw < 1) zw = 1;
   if (zh < 1) zh = 1;
   const group = this.rootSelection$
@@ -356,7 +358,7 @@ function updateElement(size) {
     .attr('height', height)
     .select('g.group')
     .attr('transform', `translate(${padding[3]},${padding[0]})`);
-  this.rootSelection$.select('clipPath').selectChild().attr('x', 1).attr('y', 0).attr('width', zw).attr('height', zh);
+  this.rootSelection$.select('clipPath').select('rect').attr('width', zw).attr('height', zh);
   if (this.scale.x) {
     group.select('.xAxis').attr('transform', `translate(0,${zh})`);
     group.select('.xLabel').attr('transform', `translate(${zw / 2} ${zh + padding[2] - 14}) rotate(0)`);
@@ -433,6 +435,7 @@ function createElement(container, size) {
     .attr('stroke-linejoin', 'round')
     .attr('stroke-linecap', 'round')
     .style('position', 'absolute');
+  const pathClipId = util.guid('clip');
   svgSelection.append('defs').append('svg:clipPath').attr('id', pathClipId).append('rect');
   const groupSelection = svgSelection.append('g').attr('class', 'group');
   axisType.forEach((key) => {
@@ -446,7 +449,6 @@ function createElement(container, size) {
         .append('text');
     }
   });
-  const pathClipId = util.guid('clip');
   groupSelection.append('g').attr('class', 'zAxis').attr('clip-path', `url(#${pathClipId})`);
   groupSelection
     .append('g')
@@ -828,6 +830,8 @@ class BaseChart {
       width,
       height,
       padding = [0, 0, 0, 0],
+      rWidth,
+      rHeight,
       fontSize = 12,
       download,
       tooptip,
@@ -890,7 +894,7 @@ class BaseChart {
     this.zoomer$ = d3.zoom();
     this.xCanZoom$ = !!this.zoom.x;
     this.yCanZoom$ = !!this.zoom.y;
-    createElement.call(this, container, { width, height, padding });
+    createElement.call(this, container, { width, height, padding, rWidth, rHeight });
     createScale.call(this);
     createZoom.call(this);
     bindEvents.call(this);

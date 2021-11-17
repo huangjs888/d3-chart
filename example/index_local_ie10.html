@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-10-25 17:29:05
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-11-15 15:28:07
+ * @LastEditTime: 2021-11-17 14:32:26
  * @Description: ******
 -->
 <!DOCTYPE html>
@@ -42,9 +42,9 @@
         var data = CHART_DATA;
         var heatMap = new d3Chart.HeatMap({
           container: '#heatmap',
-          padding: [20, 20, 36, 62],
+          padding: [20, 62, 36, 62],
           download: 'png',
-          colorBar: { show: true, width: 22, left: 0, right: 80 },
+          colorBar: { show: true, width: 22, left: 12, right: 50 },
           tooptip: { cross: 'xy', select: 'xy' },
           zoom: {
             x: {
