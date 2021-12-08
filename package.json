@@ -37,7 +37,10 @@
     "d3",
     "chart",
     "line",
-    "heatmap"
+    "heatmap",
+    "d3-chart",
+    "d3-line",
+    "d3-heatmap"
   ],
   "author": "Huangjs",
   "license": "ISC",

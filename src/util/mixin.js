@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-10-11 11:38:34
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-10-22 14:39:25
+ * @LastEditTime: 2021-12-08 09:25:05
  * @Description: ******
  */
 
@@ -24,10 +24,16 @@ function setPrototypeOf(subClass, superClass) {
     throw new TypeError(`Super expression must either be a function or null, not ${typeof superClass}`);
   }
   // 设置函数自身（静态）的__proto__
-  if (superClass) Object.setPrototypeOf(subClass, superClass);
-  else Object.setPrototypeOf(subClass, Function.prototype);
+  if (superClass)
+    Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : (subClass.__proto__ = superClass);
+  else
+    Object.setPrototypeOf
+      ? Object.setPrototypeOf(subClass, Function.prototype)
+      : (subClass.__proto__ = Function.prototype);
   // 设置函数prototype（原型）的__proto__
-  Object.setPrototypeOf(subClass.prototype, superClass.prototype);
+  Object.setPrototypeOf
+    ? Object.setPrototypeOf(subClass.prototype, superClass.prototype)
+    : (subClass.prototype.__proto__ = superClass.prototype);
 }
 // 对已定义的类进行按序混合
 // mixins数组后面的属性方法会覆盖前面的同名属性方法
@@ -56,7 +62,7 @@ function inherit(...inherits) {
 // 注意：subClass必须是派生类（保证构造函数使用super方法）
 // 并且如果subClass的方法里有使用super.xxx()，则替换的newSuperClass或newSuperClass的祖先原型里必须定义xxx方法
 function replace(subClass, newSuperClass) {
-  const oldSuperClass = Object.getPrototypeOf(subClass);
+  const oldSuperClass = Object.getPrototypeOf ? Object.getPrototypeOf(subClass) : subClass.__proto__;
   setPrototypeOf(subClass, newSuperClass);
   return function revoke() {
     setPrototypeOf(subClass, oldSuperClass);

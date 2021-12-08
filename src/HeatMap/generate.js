@@ -1,14 +1,16 @@
 /*
  * @Author: Huangjs
- * @Date: 2021-03-17 16:23:00
+ * @Date: 2021-12-07 15:02:48
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-11-17 15:12:26
- * @Description: ******
+ * @LastEditTime: 2021-12-07 17:48:28
+ * @Description: 按需生成HeatMap构造器
  */
 
 import * as d3 from 'd3';
-import BaseChart from './BaseChart';
-import * as util from './util';
+import BaseChart from '../BaseChart';
+import LineGraph from '../LineGraph';
+import * as util from '../util';
+import mixin from '../util/mixin';
 
 const prefixSIFormat = d3.format('~s');
 
@@ -277,6 +279,7 @@ function tipCompute(prevRes, point, scaleAxis) {
     let xval = xScale.invert(x0);
     let yval = yScale.invert(y0);
     let zval = 0;
+    // @ts-ignore
     const [xi0, xi1] = util.findNearIndex(+xval, data.x);
     const [yi0, yi1] = util.findNearIndex(+yval, data.y);
     if (xi0 >= 0 && xi1 >= 0 && yi0 >= 0 && yi1 >= 0) {
@@ -351,9 +354,9 @@ function updateScale() {
   if (this.scale.z) {
     const zFormat = this.scale.z.format;
     let [opacity, range, domain] = this.scale.z.domain || [];
-    opacity = opacity || 0;
-    range = range || ['#fff', '#fff'];
-    domain = domain || [0, 0];
+    opacity = opacity || 1;
+    range = range || ['#000', '#fff'];
+    domain = domain || [0, 1];
     this.zScale$
       .range(range.map((c) => d3.color(c).copy({ opacity })))
       .domain(domain)
@@ -362,35 +365,39 @@ function updateScale() {
       const linearGradient = this.rootSelection$.select('linearGradient');
       const heatColorBar = this.rootSelection$.select('.heatColorBar');
       const height = this.height$;
-      const length = range.length - 1;
+      const startDomain = domain[0];
+      const deltDomain = domain[domain.length - 1] - startDomain;
       const width = this.colorBar.width;
       linearGradient
         .selectAll('stop')
-        .data(range)
+        .data(domain)
         .join('stop')
-        .attr('offset', (_, i) => `${(i * 100) / length}%`)
-        .attr('stop-color', (c) => c);
+        .attr('offset', (v) => `${(100 * (v - startDomain)) / deltDomain}%`)
+        .attr('stop-color', (_, i) => range[i]);
       heatColorBar
         .selectAll('g')
-        .data(range)
+        .data(domain)
         .join(
           (enter) => {
             const tick = enter
               .append('g')
               .attr('class', 'tick')
-              .attr('transform', (_, i) => `translate(${width},${(i * height) / length})`);
+              .attr('transform', (v) => `translate(${width},${height * (1 - (v - startDomain) / deltDomain)})`);
             tick.append('path').attr('d', 'M0,0 L4,4 L4,-4 Z');
             tick
               .append('text')
               .attr('x', 8)
               .attr('dy', '0.32em')
               .attr('text-anchor', 'start')
-              .text((_, i) => zFormat(domain[length - i]));
+              .text((v) => zFormat(v));
             return tick;
           },
           (update) => {
-            const tick = update.attr('transform', (_, i) => `translate(${width},${(i * height) / length})`);
-            tick.select('text').text((_, i) => zFormat(domain[length - i]));
+            const tick = update.attr(
+              'transform',
+              (v) => `translate(${width},${height * (1 - (v - startDomain) / deltDomain)})`
+            );
+            tick.select('text').text((v) => zFormat(v));
             return tick;
           }
         );
@@ -411,6 +418,7 @@ function doubleClick(point, { xScale, yScale }, [lineMarkX, lineMarkY]) {
       // 竖线
       let xval = +xScale.invert(x0);
       let xi = util.findNearIndex(xval, data.x, !average);
+      // @ts-ignore
       if (xi.length === 2) {
         const [xi0, xi1] = xi;
         if (xi0 < 0) {
@@ -419,14 +427,17 @@ function doubleClick(point, { xScale, yScale }, [lineMarkX, lineMarkY]) {
           xi = xi0;
         }
       }
+      // @ts-ignore
       if (xi.length === 2) {
         const xval0 = +data.x[xi[0]];
         const xval1 = +data.x[xi[1]];
         const rate = (xval - xval0) / (xval1 - xval0);
         zval = data.z.map((v) => rate * (v[xi[1]] - v[xi[0]]) + v[xi[0]]);
       } else {
+        // @ts-ignore
         xval = data.x[xi];
         x0 = xScale(xval);
+        // @ts-ignore
         zval = data.z.map((v) => v[xi]);
       }
       result.xSelect = { x: xval, y: data.y, z: zval };
@@ -438,6 +449,7 @@ function doubleClick(point, { xScale, yScale }, [lineMarkX, lineMarkY]) {
       // 横线
       let yval = +yScale.invert(y0);
       let yi = util.findNearIndex(yval, data.y, !average);
+      // @ts-ignore
       if (yi.length === 2) {
         const [yi0, yi1] = yi;
         if (yi0 < 0) {
@@ -446,6 +458,7 @@ function doubleClick(point, { xScale, yScale }, [lineMarkX, lineMarkY]) {
           yi = yi0;
         }
       }
+      // @ts-ignore
       if (yi.length === 2) {
         const yval0 = +data.y[yi[0]];
         const yval1 = +data.y[yi[1]];
@@ -455,8 +468,10 @@ function doubleClick(point, { xScale, yScale }, [lineMarkX, lineMarkY]) {
           return rate * (v1 - v0) + v0;
         });
       } else {
+        // @ts-ignore
         yval = data.y[yi];
         y0 = yScale(yval);
+        // @ts-ignore
         zval = data.z[yi] || [];
       }
       result.ySelect = { x: data.x, y: yval, z: zval };
@@ -468,294 +483,329 @@ function doubleClick(point, { xScale, yScale }, [lineMarkX, lineMarkY]) {
   return result;
 }
 
-class HeatMap extends BaseChart {
-  constructor(...params) {
-    const { data, tooptip, colorBar, scale, ...restOptions } = params[0] || {};
-    const { heat, ...restData } = data || {};
-    let rWidth = restOptions.rWidth;
-    if (colorBar) {
-      colorBar.show = !!colorBar.show;
-      colorBar.left = util.isNumber(colorBar.left) ? colorBar.left : 0;
-      colorBar.width = util.isNumber(colorBar.width) ? colorBar.width : 0;
-      colorBar.right = util.isNumber(colorBar.right) ? colorBar.right : 0;
-      if (colorBar.show) {
-        rWidth = (util.isNumber(rWidth) ? rWidth : 0) + colorBar.left + colorBar.width + colorBar.right;
-      }
-    }
-    super({
-      ...restOptions,
-      rWidth,
-      data: {
-        heat: !heat ? { x: [], y: [], z: [] } : { x: heat.x || [], y: heat.y || [], z: heat.z || [] },
-        ...restData,
-      },
-      tooptip: !tooptip
-        ? false
-        : {
-            cross: 'xy',
-            select: '',
-            average: true,
-            ...tooptip,
-            compute: (res, ...args) => {
-              let result = tipCompute.call(this, res, ...args);
-              if (typeof tooptip.compute === 'function') {
-                result = tooptip.compute.call(this, result, ...args);
-              }
-              return result;
-            },
-          },
-      scale: {
-        /* z: {
-          type: 'linear', // 坐标类型
-          ticks: 5, // 坐标刻度数目
-          format: (v) => v, // 坐标值格式化函数
-          domain: [0, ['#fff', '#fff'], [0, 0]], // 值的色域范围和透明度
-          label: '', // 坐标名称
-          unit: '', // 坐标值单位
-        }, */
-        z: { format: prefixSIFormat },
-        ...scale,
-      },
-    });
-    this.colorBar = colorBar;
-    this.showHeat$ = true;
-    const tempText = `${this.scale.z.label || ''}${this.scale.z.subLabel ? ` ( ${this.scale.z.subLabel} )` : ''}${
-      this.scale.z.unit ? ` ( ${this.scale.z.unit} )` : ''
-    }`;
-    const heatLabel = this.rootSelection$
-      .select('g.group')
-      .append('g')
-      .attr('class', 'heatLabel')
-      .attr('fill', 'currentColor')
-      .attr('dominant-baseline', 'text-before-edge')
-      .attr('transform', `translate(${this.scale.y ? 10 : this.width$ - 10},${this.scale.x2 ? 0 : -this.padding[0]})`);
-    heatLabel
-      .append('text')
-      .attr('dx', util.measureSvgText(tempText, this.fontSize) / 2)
-      .text(tempText);
-    if (this.tooptip) {
-      const { select } = this.tooptip;
-      select.split('').forEach((key) => {
-        if (key) {
-          this.zoomSelection$
-            .append('div')
-            .attr('class', `${key}-linemark`)
-            .style('background', '#fa9305')
-            .style('display', 'none')
-            .style('position', 'absolute')
-            .style('top', !this.scale.y ? 0 : this.height$ - 1)
-            .style('left', !this.scale.x ? this.width$ - 1 : 0)
-            .style('width', key === 'x' ? '1px' : '100%')
-            .style('height', key === 'x' ? '100%' : '1px');
-        }
-      });
-    }
-    const lineMark = [this.zoomSelection$.select('.x-linemark'), this.zoomSelection$.select('.y-linemark')];
-    const zCanvasParent = this.rootSelection$
-      .insert('div', 'svg')
-      .style('position', 'absolute')
-      .style('width', `${this.width$}px`)
-      .style('height', `${this.height$}px`)
-      .style('top', `${this.padding[0]}px`)
-      .style('left', `${this.padding[3] + 1}px`);
-    const zCanvas = zCanvasParent
-      .append('canvas')
-      .style('width', '100%')
-      .style('height', '100%')
-      .attr('width', this.width$)
-      .attr('height', this.height$);
-    if (colorBar) {
-      const gradientId = util.guid('gradient');
-      this.rootSelection$
-        .select('svg')
-        .select('defs')
-        .append('linearGradient')
-        .attr('id', gradientId)
-        .attr('x1', '0%')
-        .attr('y1', '100%')
-        .attr('x2', '0%')
-        .attr('y2', '0%');
-      this.rootSelection$
-        .select('svg')
-        .select('.group')
-        .append('g')
-        .attr('class', 'heatColorBar')
-        .style('display', colorBar.show ? 'block' : 'none')
-        .attr('fill', 'currentColor')
-        .attr('transform', `translate(${this.width$ + this.padding[1] + colorBar.left},0)`)
-        .append('rect')
-        .attr('x', 0)
-        .attr('y', 0)
-        .attr('width', colorBar.width)
-        .attr('height', this.height$)
-        .attr('fill', `url(#${gradientId})`);
-    }
-    const zContext = zCanvas.node().getContext('2d');
-    this.zScale$ = d3.scaleLinear();
-    updateScale.call(this);
-    this.tempCanvas$ = {
-      canvas: document.createElement('canvas'),
-      range: null,
-    };
-    const dblclick$$ = this.dblclick$;
-    this.dblclick$ = (e, ...args) => {
-      dblclick$$.call(null, e, ...args);
-      const { x, x2, y, y2 } = e.scaleAxis;
-      const xScale = (x || x2).scale;
-      const yScale = (y || y2).scale;
-      return doubleClick.call(this, d3.pointer(e.sourceEvent), { xScale, yScale }, lineMark);
-    };
-    const contextmenu$$ = this.contextmenu$;
-    this.contextmenu$ = (e, ...args) => {
-      contextmenu$$.call(null, e, ...args);
-      lineMark.forEach((lm) => lm.node() && lm.style('display', 'none'));
-    };
-    const zooming$$ = this.zooming$;
-    this.zooming$ = (e, ...args) => {
-      zooming$$.call(null, e, ...args);
-      const { x, x2, y, y2 } = e.scaleAxis;
-      const xScale = (x || x2).scale;
-      const yScale = (y || y2).scale;
-      drawing.call(this, zContext, { xScale, yScale }, lineMark);
-    };
-    const zoomend$$ = this.zoomend$;
-    this.debounceDrawend$ = util.debounce(drawend, 450, { leading: false, trailing: true });
-    this.zoomend$ = (e, ...args) => {
-      zoomend$$.call(null, e, ...args);
-      const { x, x2, y, y2 } = e.scaleAxis;
-      const xScale = (x || x2).scale;
-      const yScale = (y || y2).scale;
-      this.debounceDrawend$.call(this, zContext, { xScale, yScale });
-      if (e.sourceEvent.type === 'call') {
-        util.delay(() => {
-          this.debounceDrawend$.flush();
-        }, 1);
-      }
-    };
-    const resize$$ = this.resize$;
-    this.resize$ = (e, { width, height, padding, ...rest }, ...args) => {
-      resize$$.call(null, e, { width, height, padding, ...rest }, ...args);
-      zCanvasParent
-        .style('width', `${width}px`)
-        .style('height', `${height}px`)
-        .style('top', `${padding[0]}px`)
-        .style('left', `${padding[3] + 1}px`);
-      zCanvas.attr('width', width).attr('height', height);
-      heatLabel.attr('transform', `translate(${this.scale.y ? 10 : width - 10},${this.scale.x2 ? 0 : -padding[0]})`);
+export default function generateHeatMap(superName) {
+  class HeatMap extends BaseChart {
+    constructor(...params) {
+      const { data, tooptip, colorBar, scale, ...restOptions } = params[0] || {};
+      const { heat, ...restData } = data || {};
+      let rWidth = restOptions.rWidth;
       if (colorBar) {
-        const heatColorBar = this.rootSelection$.select('.heatColorBar');
-        heatColorBar.attr('transform', `translate(${width + padding[1] + colorBar.left},0)`);
-        heatColorBar.select('rect').attr('height', height);
-        const ticks = heatColorBar.selectAll('.tick');
-        const length = ticks.size() - 1;
-        ticks.attr('transform', (_, i) => `translate(${colorBar.width},${(i * height) / length})`);
+        colorBar.show = !!colorBar.show;
+        colorBar.left = util.isNumber(colorBar.left) ? colorBar.left : 0;
+        colorBar.width = util.isNumber(colorBar.width) ? colorBar.width : 0;
+        colorBar.right = util.isNumber(colorBar.right) ? colorBar.right : 0;
+        if (colorBar.show) {
+          rWidth = (util.isNumber(rWidth) ? rWidth : 0) + colorBar.left + colorBar.width + colorBar.right;
+        }
       }
-    };
-    heatLabel.on('click', () => {
-      if (this.destroyed) return;
-      this.showHeat$ = !this.showHeat$;
-      lineMark.forEach((lm) => lm.node() && lm.style('display', this.showHeat$ ? 'block' : 'none'));
-      heatLabel.attr('fill', !this.showHeat$ ? '#aaaa' : 'currentColor');
-      if (this.rendered) {
-        this.render();
-      }
-    });
-  }
-
-  setData(data, render, computeDomain) {
-    if (!data) return this;
-    const { heat, ...restData } = data || {};
-    super.setData(
-      {
-        heat: !heat ? { x: [], y: [], z: [] } : { x: heat.x || [], y: heat.y || [], z: heat.z || [] },
-        ...restData,
-      },
-      false,
-      !heat
-        ? computeDomain
-        : ({ heat: heatData }, needDomain) => {
-            const domains = {};
-            needDomain.forEach((key) => {
-              if (heatData[key] && heatData[key].length > 0) {
-                domains[key] = d3.extent([...heatData[key]]);
-              }
-            });
-            return domains;
-          }
-    );
-    const lineMarkX = this.zoomSelection$.select('.x-linemark');
-    const lineMarkY = this.zoomSelection$.select('.y-linemark');
-    if (lineMarkX.node()) {
-      lineMarkX.datum(this.data.heat.x[0]);
-    }
-    if (lineMarkY.node()) {
-      lineMarkY.datum(this.data.heat.y[0]);
-    }
-    if (render) {
-      this.render();
-    }
-    return this;
-  }
-
-  setDomain(domain, render) {
-    if (!domain) return this;
-    const { z, ...rest } = domain;
-    super.setDomain(rest);
-    if (z && this.scale.z) {
-      this.scale.z.domain = z;
-      updateScale.call(this);
-      if (render) {
-        this.render();
-      }
-    }
-    return this;
-  }
-
-  setLabel(label, render) {
-    if (!label) return this;
-    const { z, ...rest } = label;
-    super.setLabel(rest);
-    if (z && this.scale.z) {
-      this.scale.z.label = z.label;
-      this.scale.z.subLabel = z.subLabel;
-      this.scale.z.unit = z.unit;
+      super({
+        ...restOptions,
+        rWidth,
+        data: {
+          heat: !heat ? { x: [], y: [], z: [] } : { x: heat.x || [], y: heat.y || [], z: heat.z || [] },
+          ...restData,
+        },
+        tooptip: !tooptip
+          ? false
+          : {
+              cross: 'xy',
+              select: '',
+              average: true,
+              ...tooptip,
+              compute: (res, ...args) => {
+                let result = tipCompute.call(this, res, ...args);
+                if (typeof tooptip.compute === 'function') {
+                  result = tooptip.compute.call(this, result, ...args);
+                }
+                return result;
+              },
+            },
+        scale: {
+          /* z: {
+            type: 'linear', // 坐标类型
+            ticks: 5, // 坐标刻度数目
+            format: (v) => v, // 坐标值格式化函数
+            domain: [0, ['#fff', '#fff'], [0, 0]], // 值的色域范围和透明度
+            label: '', // 坐标名称
+            unit: '', // 坐标值单位
+          }, */
+          z: { format: prefixSIFormat },
+          ...scale,
+        },
+      });
+      this.colorBar = colorBar;
+      this.showHeat$ = true;
       const tempText = `${this.scale.z.label || ''}${this.scale.z.subLabel ? ` ( ${this.scale.z.subLabel} )` : ''}${
         this.scale.z.unit ? ` ( ${this.scale.z.unit} )` : ''
       }`;
-      this.rootSelection$
-        .select('.heatLabel')
-        .select('text')
+      const heatLabel = this.rootSelection$
+        .select('g.group')
+        .append('g')
+        .attr('class', 'heatLabel')
+        .attr('fill', 'currentColor')
+        .attr(
+          'transform',
+          // @ts-ignore
+          `translate(${this.scale.y ? 10 : this.width$ - 10},${
+            // @ts-ignore
+            this.scale.x ? this.fontSize - this.padding[0] : this.height$ + this.padding[2] - 2
+          })`
+        );
+      heatLabel
+        .append('text')
         .attr('dx', util.measureSvgText(tempText, this.fontSize) / 2)
         .text(tempText);
+      if (this.tooptip) {
+        const { select } = this.tooptip;
+        select.split('').forEach((key) => {
+          if (key) {
+            // @ts-ignore
+            this.zoomSelection$
+              .append('div')
+              .attr('class', `${key}-linemark`)
+              .style('background', '#fa9305')
+              .style('display', 'none')
+              .style('position', 'absolute')
+              // @ts-ignore
+              .style('top', !this.scale.y ? 0 : this.height$ - 1)
+              // @ts-ignore
+              .style('left', !this.scale.x ? this.width$ - 1 : 0)
+              .style('width', key === 'x' ? '1px' : '100%')
+              .style('height', key === 'x' ? '100%' : '1px');
+          }
+        });
+      }
+      // @ts-ignore
+      const lineMark = [this.zoomSelection$.select('.x-linemark'), this.zoomSelection$.select('.y-linemark')];
+      const zCanvasParent = this.rootSelection$
+        .insert('div', 'svg')
+        .style('position', 'absolute')
+        // @ts-ignore
+        .style('width', `${this.width$}px`)
+        // @ts-ignore
+        .style('height', `${this.height$}px`)
+        // @ts-ignore
+        .style('top', `${this.padding[0]}px`)
+        // @ts-ignore
+        .style('left', `${this.padding[3]}px`);
+      const zCanvas = zCanvasParent
+        .append('canvas')
+        .style('width', '100%')
+        .style('height', '100%')
+        // @ts-ignore
+        .attr('width', this.width$)
+        // @ts-ignore
+        .attr('height', this.height$);
+      if (colorBar) {
+        const gradientId = util.guid('gradient');
+        this.rootSelection$
+          .select('svg')
+          .select('defs')
+          .append('linearGradient')
+          .attr('id', gradientId)
+          .attr('x1', '0%')
+          .attr('y1', '100%')
+          .attr('x2', '0%')
+          .attr('y2', '0%');
+        this.rootSelection$
+          .select('svg')
+          .select('.group')
+          .append('g')
+          .attr('class', 'heatColorBar')
+          .style('display', colorBar.show ? 'block' : 'none')
+          .attr('fill', 'currentColor')
+          // @ts-ignore
+          .attr('transform', `translate(${this.width$ + this.padding[1] + colorBar.left},0)`)
+          .append('rect')
+          .attr('x', 0)
+          .attr('y', 0)
+          .attr('width', colorBar.width)
+          // @ts-ignore
+          .attr('height', this.height$)
+          .attr('fill', `url(#${gradientId})`);
+      }
+      const zContext = zCanvas.node().getContext('2d');
+      this.zScale$ = d3.scaleLinear();
+      updateScale.call(this);
+      this.tempCanvas$ = {
+        canvas: document.createElement('canvas'),
+        range: null,
+      };
+      const dblclick$$ = this.dblclick$;
+      this.dblclick$ = (e, ...args) => {
+        dblclick$$.call(null, e, ...args);
+        const { x, x2, y, y2 } = e.scaleAxis;
+        const xScale = (x || x2).scale;
+        const yScale = (y || y2).scale;
+        return doubleClick.call(this, d3.pointer(e.sourceEvent), { xScale, yScale }, lineMark);
+      };
+      const contextmenu$$ = this.contextmenu$;
+      this.contextmenu$ = (e, ...args) => {
+        contextmenu$$.call(null, e, ...args);
+        lineMark.forEach((lm) => lm.node() && lm.style('display', 'none'));
+      };
+      const zooming$$ = this.zooming$;
+      this.zooming$ = (e, ...args) => {
+        zooming$$.call(null, e, ...args);
+        const { x, x2, y, y2 } = e.scaleAxis;
+        const xScale = (x || x2).scale;
+        const yScale = (y || y2).scale;
+        drawing.call(this, zContext, { xScale, yScale }, lineMark);
+      };
+      const zoomend$$ = this.zoomend$;
+      this.debounceDrawend$ = util.debounce(drawend, 450, { leading: false, trailing: true });
+      this.zoomend$ = (e, ...args) => {
+        zoomend$$.call(null, e, ...args);
+        const { x, x2, y, y2 } = e.scaleAxis;
+        const xScale = (x || x2).scale;
+        const yScale = (y || y2).scale;
+        this.debounceDrawend$.call(this, zContext, { xScale, yScale });
+        if (e.sourceEvent.type === 'call') {
+          util.delay(() => {
+            this.debounceDrawend$.flush();
+          }, 1);
+        }
+      };
+      const resize$$ = this.resize$;
+      this.resize$ = (e, { width, height, padding, ...rest }, ...args) => {
+        resize$$.call(null, e, { width, height, padding, ...rest }, ...args);
+        zCanvasParent
+          .style('width', `${width}px`)
+          .style('height', `${height}px`)
+          .style('top', `${padding[0]}px`)
+          .style('left', `${padding[3]}px`);
+        zCanvas.attr('width', width).attr('height', height);
+        heatLabel.attr(
+          'transform',
+          `translate(${this.scale.y ? 10 : width - 10},${
+            this.scale.x ? this.fontSize - padding[0] : height + padding[2] - 2
+          })`
+        );
+        if (colorBar) {
+          const heatColorBar = this.rootSelection$.select('.heatColorBar');
+          heatColorBar.attr('transform', `translate(${width + padding[1] + colorBar.left},0)`);
+          heatColorBar.select('rect').attr('height', height);
+          const ticks = heatColorBar.selectAll('.tick');
+          const domain = ticks.data();
+          const startDomain = domain[0];
+          const deltDomain = domain[domain.length - 1] - startDomain;
+          ticks.attr(
+            'transform',
+            (v) => `translate(${colorBar.width},${height * (1 - (v - startDomain) / deltDomain)})`
+          );
+        }
+      };
+      heatLabel.on('click', () => {
+        if (this.destroyed) return;
+        this.showHeat$ = !this.showHeat$;
+        lineMark.forEach((lm) => lm.node() && lm.style('display', this.showHeat$ ? 'block' : 'none'));
+        heatLabel.attr('fill', !this.showHeat$ ? '#aaaa' : 'currentColor');
+        if (this.rendered) {
+          this.render();
+        }
+      });
+    }
+
+    setData(data, render, computeDomain) {
+      if (!data) return this;
+      const { heat, ...restData } = data || {};
+      super.setData(
+        {
+          heat: !heat ? { x: [], y: [], z: [] } : { x: heat.x || [], y: heat.y || [], z: heat.z || [] },
+          ...restData,
+        },
+        false,
+        !heat
+          ? computeDomain
+          : ({ heat: heatData }, needDomain) => {
+              const domains = {};
+              needDomain.forEach((key) => {
+                if (heatData[key] && heatData[key].length > 0) {
+                  domains[key] = d3.extent([...heatData[key]]);
+                }
+              });
+              return domains;
+            }
+      );
+      // @ts-ignore
+      const lineMarkX = this.zoomSelection$.select('.x-linemark');
+      // @ts-ignore
+      const lineMarkY = this.zoomSelection$.select('.y-linemark');
+      if (lineMarkX.node()) {
+        lineMarkX.datum(this.data.heat.x[0]);
+      }
+      if (lineMarkY.node()) {
+        lineMarkY.datum(this.data.heat.y[0]);
+      }
       if (render) {
         this.render();
       }
+      return this;
     }
-    return this;
-  }
 
-  downloadImage() {
-    const zCanvas = this.rootSelection$.select('canvas').node();
-    const svgDiv = this.rootSelection$.select('.actions');
-    const left = window.parseInt(svgDiv.style('left'));
-    const top = window.parseInt(svgDiv.style('top'));
-    super.downloadImage((this.scale.z || {}).label, {
-      image: zCanvas,
-      x: left,
-      y: top,
-    });
-  }
-
-  destroy() {
-    if (this.debounceDrawend$) {
-      this.debounceDrawend$.cancel();
-      this.debounceDrawend$ = null;
+    setDomain(domain, render) {
+      if (!domain) return this;
+      const { z, ...rest } = domain;
+      super.setDomain(rest);
+      if (z && this.scale.z) {
+        this.scale.z.domain = z;
+        updateScale.call(this);
+        if (render) {
+          this.render();
+        }
+      }
+      return this;
     }
-    if (this.zScale$) this.zScale$ = null;
-    if (this.tempCanvas$) this.tempCanvas$ = {};
-    super.destroy();
-    return this;
+
+    setLabel(label, render) {
+      if (!label) return this;
+      const { z, ...rest } = label;
+      super.setLabel(rest);
+      if (z && this.scale.z) {
+        this.scale.z.label = z.label;
+        this.scale.z.subLabel = z.subLabel;
+        this.scale.z.unit = z.unit;
+        const tempText = `${this.scale.z.label || ''}${this.scale.z.subLabel ? ` ( ${this.scale.z.subLabel} )` : ''}${
+          this.scale.z.unit ? ` ( ${this.scale.z.unit} )` : ''
+        }`;
+        this.rootSelection$
+          .select('.heatLabel')
+          .select('text')
+          .attr('dx', util.measureSvgText(tempText, this.fontSize) / 2)
+          .text(tempText);
+        if (render) {
+          this.render();
+        }
+      }
+      return this;
+    }
+
+    downloadImage() {
+      const zCanvas = this.rootSelection$.select('canvas').node();
+      const svgDiv = this.rootSelection$.select('.actions');
+      const left = window.parseInt(svgDiv.style('left'));
+      const top = window.parseInt(svgDiv.style('top'));
+      super.downloadImage((this.scale.z || {}).label, {
+        image: zCanvas,
+        x: left,
+        y: top,
+      });
+    }
+
+    destroy() {
+      if (this.debounceDrawend$) {
+        this.debounceDrawend$.cancel();
+        this.debounceDrawend$ = null;
+      }
+      if (this.zScale$) this.zScale$ = null;
+      // @ts-ignore
+      if (this.tempCanvas$) this.tempCanvas$ = {};
+      super.destroy();
+      return this;
+    }
   }
+  if (superName === 'LineGraph') {
+    mixin.replace(HeatMap, LineGraph);
+  }
+  return HeatMap;
 }
-
-export default HeatMap;

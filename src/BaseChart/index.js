@@ -2,12 +2,12 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-11-17 14:31:15
- * @Description: ******
+ * @LastEditTime: 2021-12-07 17:48:16
+ * @Description: 基础图表构造器
  */
 
 import * as d3 from 'd3';
-import * as util from './util';
+import * as util from '../util';
 
 const downloadPath =
   'M505.7 661a8 8 0 0012.6 0l112-141.7c4.1-5.2.4-12.9-6.3-12.9h-74.1V168c0-4.4-3.6-8-8-8h-60c-4.4 0-8 3.6-8 8v338.3H400c-6.7 0-10.4 7.7-6.3 12.9l112 141.8zM878 626h-60c-4.4 0-8 3.6-8 8v154H214V634c0-4.4-3.6-8-8-8h-60c-4.4 0-8 3.6-8 8v198c0 17.7 14.3 32 32 32h684c17.7 0 32-14.3 32-32V634c0-4.4-3.6-8-8-8z';
@@ -118,6 +118,7 @@ const computeSize = (element, { width, height, padding, rWidth, rHeight }) => {
       parseInt(style.paddingTop, 10) -
       parseInt(style.paddingBottom, 10);
   }
+  // @ts-ignore
   let [top, right, bottom, left] = [];
   const pad = Array.isArray(padding) ? padding : [];
   let [pad0, pad1, pad2, pad3] = pad;
@@ -126,6 +127,7 @@ const computeSize = (element, { width, height, padding, rWidth, rHeight }) => {
   pad2 = !util.isNumber(pad2) || pad2 < 0 ? 0 : pad2;
   pad3 = !util.isNumber(pad3) || pad3 < 0 ? 0 : pad3;
   if (!pad.length) {
+    // @ts-ignore
     top = 0;
     right = top;
     bottom = top;
@@ -216,7 +218,9 @@ function updateScale() {
 function createScale() {
   const axisScale = {};
   axisType.forEach((key) => {
+    // @ts-ignore
     if (this.scale[key]) {
+      // @ts-ignore
       const { type = 'linear', ticks = 5, tickSize, format } = this.scale[key];
       const scale = scaleType[type]();
       let axis = null;
@@ -237,8 +241,10 @@ function createScale() {
       }
       const defaultFormat = getDefaultFormat(type);
       if (!format) {
+        // @ts-ignore
         this.scale[key].format = defaultFormat;
       }
+      // @ts-ignore
       axis = axis.tickFormat(format || ((val) => defaultFormat(val, true)));
       axisScale[key] = { scale, axis };
     }
@@ -261,6 +267,7 @@ function createScale() {
 function updateZoom() {
   const viewExtent = [
     [0, 0],
+    // @ts-ignore
     [this.width$, this.height$],
   ];
   let scaleExtent = [
@@ -271,12 +278,15 @@ function updateZoom() {
     [0, 0],
     [0, 0],
   ];
+  // @ts-ignore
   const { x: xzoom, y: yzoom } = this.zoom;
   if (xzoom || yzoom) {
     const [xdomain, ydomain] = [xzoom, yzoom].map((zoom, i) => {
       const key = zoom.domain || (i === 0 ? 'x' : 'y');
       let domain = [0, 1];
+      // @ts-ignore
       if (this.scale[key]) {
+        // @ts-ignore
         domain = this.scale[key].domain || this.dataDomains$[key] || [0, 1];
       }
       return domain;
@@ -295,7 +305,9 @@ function updateZoom() {
       yDomainEx / 10,
       yDomainEx * 10,
     ];
+    // @ts-ignore
     const xRate = this.width$ / xDomainEx;
+    // @ts-ignore
     const yRate = this.height$ / yDomainEx;
     scaleExtent = [
       [xDomainEx / xMaxPrecision || 1, yDomainEx / yMaxPrecision || 1],
@@ -312,6 +324,7 @@ function updateZoom() {
       ],
     ];
   }
+  // @ts-ignore
   this.zoomer$
     .extent(viewExtent)
     .scaleExtent([(scaleExtent[0][0] * scaleExtent[0][1]) ** 2, (scaleExtent[1][0] * scaleExtent[1][1]) ** 2])
@@ -347,65 +360,98 @@ function createZoom() {
   };
 }
 function updateElement(size) {
+  // @ts-ignore
   const { width, height, padding, rWidth, rHeight } = computeSize(this.rootSelection$.node(), size);
+  // @ts-ignore
   let zw = width - rWidth - padding[3] - padding[1];
+  // @ts-ignore
   let zh = height - rHeight - padding[0] - padding[2];
   if (zw < 1) zw = 1;
   if (zh < 1) zh = 1;
+  // @ts-ignore
   const group = this.rootSelection$
     .select('svg')
     .attr('width', width)
     .attr('height', height)
     .select('g.group')
     .attr('transform', `translate(${padding[3]},${padding[0]})`);
+  // @ts-ignore
   this.rootSelection$.select('clipPath').select('rect').attr('width', zw).attr('height', zh);
+  // @ts-ignore
   if (this.scale.x) {
     group.select('.xAxis').attr('transform', `translate(0,${zh})`);
-    group.select('.xLabel').attr('transform', `translate(${zw / 2} ${zh + padding[2] - 14}) rotate(0)`);
+    // @ts-ignore
+    group.select('.xLabel').attr('transform', `translate(${zw / 2} ${zh + padding[2] - 2}) rotate(0)`);
   }
+  // @ts-ignore
   if (this.scale.x2) {
-    group.select('.x2Label').attr('transform', `translate(${zw / 2} ${-padding[0]}) rotate(0)`);
+    // @ts-ignore
+    group.select('.x2Label').attr('transform', `translate(${zw / 2} ${this.fontSize - padding[0]}) rotate(0)`);
   }
+  // @ts-ignore
   if (this.scale.y) {
-    group.select('.yLabel').attr('transform', `translate(${-padding[3]} ${zh / 2}) rotate(-90)`);
+    // @ts-ignore
+    group.select('.yLabel').attr('transform', `translate(${this.fontSize - padding[3]} ${zh / 2}) rotate(-90)`);
   }
+  // @ts-ignore
   if (this.scale.y2) {
     group.select('.y2Axis').attr('transform', `translate(${zw},0)`);
-    group.select('.y2Label').attr('transform', `translate(${zw + padding[1] - 14} ${zh / 2}) rotate(-90)`);
+    // @ts-ignore
+    group.select('.y2Label').attr('transform', `translate(${zw + padding[1]} ${zh / 2}) rotate(-90)`);
   }
+  // @ts-ignore
   const svgDiv = this.rootSelection$
     .select('div.actions')
     .style('width', `${zw}px`)
     .style('height', `${zh}px`)
     .style('top', `${padding[0]}px`)
-    .style('left', `${padding[3] + 1}px`);
+    .style('left', `${padding[3]}px`);
+  // @ts-ignore
   if (this.zoom.x) {
     svgDiv
       .select('.xlock')
+      // @ts-ignore
       .style('top', `${zh + padding[2] - 21}px`)
       .style('left', `${zw - 12}px`);
   }
+  // @ts-ignore
   if (this.zoom.y) {
+    // @ts-ignore
     svgDiv.select('.ylock').style('top', '-20px').style('left', `${-padding[3]}px`);
   }
   let offset = 5;
+  // @ts-ignore
   if (this.zoom.x || this.zoom.y) {
     svgDiv
       .select('.reset')
+      // @ts-ignore
       .style('top', `${-padding[0] - 3}px`)
-      .style('left', `${this.scale.y ? zw - offset - 18 : offset}px`);
+      // @ts-ignore
+      .style('left', `${this.scale.y ? zw - offset - this.fontSize : offset}px`);
     offset += 23;
   }
+  // @ts-ignore
   if (this.download) {
     svgDiv
       .select('.download')
+      // @ts-ignore
       .style('top', `${-padding[0] - 3}px`)
-      .style('left', `${this.scale.y ? zw - offset - 18 : offset}px`);
+      // @ts-ignore
+      .style('left', `${this.scale.y ? zw - offset - this.fontSize : offset}px`);
     offset += 23;
   }
   group
     .select('.zLabel')
-    .attr('transform', `translate(${this.scale.y ? zw - offset : offset} ${this.scale.x2 ? 0 : -padding[0]})`);
+    // @ts-ignore
+    .attr(
+      'transform',
+      // @ts-ignore
+      `translate(${this.scale.y ? zw - offset : offset} ${
+        // @ts-ignore
+        this.scale.x ? this.fontSize - padding[0] : zh + padding[2] - 2
+      })`
+    );
+
   this.width = width;
   this.height = height;
   this.padding = padding;
@@ -429,6 +475,7 @@ function createElement(container, size) {
     .attr('height', 1) // 清除默认宽高
     .attr('fill', 'none')
     .attr('text-anchor', 'middle')
+    // @ts-ignore
     .attr('font-size', this.fontSize)
     .attr('stroke', 'none')
     .attr('stroke-width', 1)
@@ -439,22 +486,14 @@ function createElement(container, size) {
   svgSelection.append('defs').append('svg:clipPath').attr('id', pathClipId).append('rect');
   const groupSelection = svgSelection.append('g').attr('class', 'group');
   axisType.forEach((key) => {
+    // @ts-ignore
     if (this.scale[key]) {
       groupSelection.append('g').attr('class', `${key}Axis`);
-      groupSelection
-        .append('g')
-        .attr('class', `${key}Label`)
-        .attr('fill', 'currentColor')
-        .attr('dominant-baseline', 'text-before-edge')
-        .append('text');
+      groupSelection.append('g').attr('class', `${key}Label`).attr('fill', 'currentColor').append('text');
     }
   });
   groupSelection.append('g').attr('class', 'zAxis').attr('clip-path', `url(#${pathClipId})`);
-  groupSelection
-    .append('g')
-    .attr('class', 'zLabel')
-    .attr('fill', 'currentColor')
-    .attr('dominant-baseline', 'text-before-edge');
+  groupSelection.append('g').attr('class', 'zLabel').attr('fill', 'currentColor');
   const divSelection = rootSelection
     .append('div')
     .attr('class', 'actions')
@@ -472,17 +511,22 @@ function createElement(container, size) {
     .style('top', 0)
     .style('left', 0);
   const actions = [];
+  // @ts-ignore
   if (this.zoom) {
+    // @ts-ignore
     if (this.zoom.x) {
       actions.push(actionButtons.xlock);
     }
+    // @ts-ignore
     if (this.zoom.y) {
       actions.push(actionButtons.ylock);
     }
+    // @ts-ignore
     if (this.zoom.x || this.zoom.y) {
       actions.push(actionButtons.reset);
     }
   }
+  // @ts-ignore
   if (this.download) {
     actions.push(actionButtons.download);
   }
@@ -502,7 +546,9 @@ function createElement(container, size) {
       .append('path')
       .attr('d', action.path);
   });
+  // @ts-ignore
   if (this.tooptip) {
+    // @ts-ignore
     const { cross } = this.tooptip;
     zoomSelection
       .append('div')
@@ -512,6 +558,7 @@ function createElement(container, size) {
       .style('border-radius', '8px')
       .style('transition', 'none')
       .style('padding', '10px 14px')
+      // @ts-ignore
       .style('font-size', `${this.fontSize}px`)
       .style('line-height', '22px')
       .style('position', 'absolute')
@@ -538,13 +585,17 @@ function createElement(container, size) {
   if (!(util.isNumber(size.width) && size.width > 1 && util.isNumber(size.height) && size.height > 1)) {
     const resize = util.debounce(
       (e) => {
+        // @ts-ignore
         if (this.destroyed) return;
         updateElement.call(this, size);
         updateScale.call(this);
         updateZoom.call(this);
+        // @ts-ignore
         if (this.rendered) {
+          // @ts-ignore
           this.reset();
         }
+        // @ts-ignore
         this.resize$.call(
           null,
           {
@@ -555,8 +606,11 @@ function createElement(container, size) {
             type: 'resize',
           },
           {
+            // @ts-ignore
             width: this.width$,
+            // @ts-ignore
             height: this.height$,
+            // @ts-ignore
             padding: this.padding,
           }
         );
@@ -575,14 +629,19 @@ function bindEvents() {
   let pointY0 = [0, 0];
   let point0 = [0, 0];
   let transform0 = d3.zoomIdentity;
+  // @ts-ignore
   this.zoomSelection$.datum([d3.zoomIdentity, d3.zoomIdentity]);
+  // @ts-ignore
   this.zoomer$
     .on('start', (e) => {
+      // @ts-ignore
       if (this.destroyed || !this.rendered) return;
+      // @ts-ignore
       const [xTransform, yTransform] = this.zoomSelection$.datum();
       const { transform, sourceEvent } = e;
       if (sourceEvent.type !== 'call') {
         if (!this.xCanZoom$ && !this.yCanZoom$) return;
+        // @ts-ignore
         const point = d3.pointer(e, this.zoomSelection$.node());
         if (this.xCanZoom$) {
           pointX0 = xTransform.invert(point);
@@ -593,6 +652,7 @@ function bindEvents() {
         point0 = point;
         transform0 = transform;
       }
+      // @ts-ignore
       this.zoomstart$.call(null, {
         ...e,
         transform: [xTransform, yTransform, transform],
@@ -600,18 +660,23 @@ function bindEvents() {
       });
     })
     .on('zoom', (e) => {
+      // @ts-ignore
       if (this.destroyed || !this.rendered) return;
+      // @ts-ignore
       let [xTransform, yTransform] = this.zoomSelection$.datum();
       const { transform, sourceEvent } = e;
       // sourceEvent存在表示事鼠标触发，如滚轮和移动
       if (sourceEvent.type !== 'call') {
         if (!this.xCanZoom$ && !this.yCanZoom$) return;
+        // @ts-ignore
         const point = d3.pointer(e, this.zoomSelection$.node());
+        // @ts-ignore
         if (sourceEvent.type === 'mousemove' && !util.isCanEmit(point0, point)) return;
         const deltK = transform.k / transform0.k;
         const changed = point[0] !== point0[0] || point[1] !== point0[1];
         let p = point;
         if (sourceEvent.type === 'wheel') {
+          // @ts-ignore
           p = changed ? point : point0;
         }
         if (this.xCanZoom$) {
@@ -619,6 +684,7 @@ function bindEvents() {
           if (sourceEvent.type === 'wheel') {
             px0 = changed ? xTransform.invert(point) : pointX0;
           }
+          // @ts-ignore
           xTransform = this.transform$('x', xTransform, deltK, p, px0);
         }
         if (this.yCanZoom$) {
@@ -626,6 +692,7 @@ function bindEvents() {
           if (sourceEvent.type === 'wheel') {
             py0 = changed ? yTransform.invert(point) : pointY0;
           }
+          // @ts-ignore
           yTransform = this.transform$('y', yTransform, deltK, p, py0);
         }
         transform0 = transform;
@@ -640,13 +707,17 @@ function bindEvents() {
           yTransform = notZoom ? sourceEvent.transform : transform;
         }
       }
+      // @ts-ignore
       this.zoomSelection$.datum([xTransform, yTransform]);
       const scaleAxis = getScaleAxis.call(this);
       Object.keys(scaleAxis).forEach((key) => {
         const { axis, scale } = scaleAxis[key];
+        // @ts-ignore
         this.rootSelection$.select(`.${key}Axis`).call(axis);
+        // @ts-ignore
         this.rootSelection$.select(`.${key}Label`).call(scaleLable, [this.scale[key], scale.domain()]);
       });
+      // @ts-ignore
       this.zooming$.call(null, {
         ...e,
         transform: [xTransform, yTransform, transform],
@@ -654,64 +725,88 @@ function bindEvents() {
       });
     })
     .on('end', (e) => {
+      // @ts-ignore
       if (this.destroyed || !this.rendered) return;
       const { transform, sourceEvent } = e;
       if (sourceEvent.type !== 'call') {
         if (!this.xCanZoom$ && !this.yCanZoom$) return;
+        // @ts-ignore
         const point = d3.pointer(e, this.zoomSelection$.node());
+        // @ts-ignore
         if (sourceEvent.type === 'mousemove' && !util.isCanEmit(point0, point)) return;
         pointX0 = [0, 0];
         pointY0 = [0, 0];
         point0 = [0, 0];
         transform0 = d3.zoomIdentity;
       }
+      // @ts-ignore
       this.zoomend$.call(null, {
         ...e,
+        // @ts-ignore
         transform: [...this.zoomSelection$.datum(), transform],
         scaleAxis: getScaleAxis.call(this),
       });
     });
 
+  // @ts-ignore
   this.zoomSelection$
+    // @ts-ignore
     .call(this.zoomer$)
     .on('mouseover', (e) => {
+      // @ts-ignore
       if (this.destroyed) return;
+      // @ts-ignore
       this.mouseover$.call(null, {
         sourceEvent: e,
+        // @ts-ignore
         target: this.zoomSelection$,
+        // @ts-ignore
         transform: [...this.zoomSelection$.datum(), d3.zoomTransform(this.zoomSelection$.node())],
         scaleAxis: getScaleAxis.call(this),
         type: 'mouseover',
       });
     })
     .on('mouseout', (e) => {
+      // @ts-ignore
       if (this.destroyed) return;
+      // @ts-ignore
       if (this.tooptip) {
+        // @ts-ignore
         const { cross } = this.tooptip;
+        // @ts-ignore
         const zNode = this.zoomSelection$.node();
         const { toElement } = e;
         if (!toElement || (toElement.parentNode !== zNode && toElement.parentNode.parentNode !== zNode)) {
           if (cross.indexOf('x') !== -1) {
+            // @ts-ignore
             this.zoomSelection$.select('.x-cross').style('display', 'none');
           }
           if (cross.indexOf('y') !== -1) {
+            // @ts-ignore
             this.zoomSelection$.select('.y-cross').style('display', 'none');
           }
+          // @ts-ignore
           this.zoomSelection$.select('.tooptip').style('display', 'none');
         }
       }
+      // @ts-ignore
       this.mouseout$.call(null, {
         sourceEvent: e,
+        // @ts-ignore
         target: this.zoomSelection$,
+        // @ts-ignore
         transform: [...this.zoomSelection$.datum(), d3.zoomTransform(this.zoomSelection$.node())],
         scaleAxis: getScaleAxis.call(this),
         type: 'mouseout',
       });
     })
     .on('mousemove', (e) => {
+      // @ts-ignore
       if (this.destroyed) return;
       const scaleAxis = getScaleAxis.call(this);
+      // @ts-ignore
       if (this.tooptip) {
+        // @ts-ignore
         const { cross, compute } = this.tooptip;
         const crossX = cross.indexOf('x') !== -1;
         const crossY = cross.indexOf('y') !== -1;
@@ -727,11 +822,14 @@ function bindEvents() {
             display = 'block';
           }
           if (crossX) {
+            // @ts-ignore
             this.zoomSelection$.select('.x-cross').style('left', `${x00}px`).style('display', display);
           }
           if (crossY) {
+            // @ts-ignore
             this.zoomSelection$.select('.y-cross').style('top', `${y00}px`).style('display', display);
           }
+          // @ts-ignore
           const tooptip = this.zoomSelection$.select('.tooptip');
           tooptip.style('display', display).call(result);
           if (display !== 'none') {
@@ -739,6 +837,7 @@ function bindEvents() {
             const height = tooptip.node().clientHeight;
             let left = x0 + 10;
             let top = y0 - height - 10;
+            // @ts-ignore
             if (this.width$ - left < width) {
               left = x0 - 10 - width;
             }
@@ -748,29 +847,40 @@ function bindEvents() {
           }
         }
       }
+      // @ts-ignore
       this.mouseout$.call(null, {
         sourceEvent: e,
+        // @ts-ignore
         target: this.zoomSelection$,
+        // @ts-ignore
         transform: [...this.zoomSelection$.datum(), d3.zoomTransform(this.zoomSelection$.node())],
         scaleAxis,
         type: 'mousemove',
       });
     })
     .on('click', (e) => {
+      // @ts-ignore
       if (this.destroyed) return;
+      // @ts-ignore
       this.click$.call(null, {
         sourceEvent: e,
+        // @ts-ignore
         target: this.zoomSelection$,
+        // @ts-ignore
         transform: [...this.zoomSelection$.datum(), d3.zoomTransform(this.zoomSelection$.node())],
         scaleAxis: getScaleAxis.call(this),
         type: 'click',
       });
     })
     .on('contextmenu', (e) => {
+      // @ts-ignore
       if (this.destroyed) return;
+      // @ts-ignore
       this.contextmenu$.call(null, {
         sourceEvent: e,
+        // @ts-ignore
         target: this.zoomSelection$,
+        // @ts-ignore
         transform: [...this.zoomSelection$.datum(), d3.zoomTransform(this.zoomSelection$.node())],
         scaleAxis: getScaleAxis.call(this),
         type: 'contextmenu',
@@ -778,46 +888,67 @@ function bindEvents() {
       e.preventDefault();
     })
     .on('dblclick', (e) => {
+      // @ts-ignore
       if (this.destroyed) return;
+      // @ts-ignore
       this.dblclick$.call(null, {
         sourceEvent: e,
+        // @ts-ignore
         target: this.zoomSelection$,
+        // @ts-ignore
         transform: [...this.zoomSelection$.datum(), d3.zoomTransform(this.zoomSelection$.node())],
         scaleAxis: getScaleAxis.call(this),
         type: 'dblclick',
       });
     });
+  // @ts-ignore
   if (!this.zoom.doubleZoom) {
     // 取消双击放大
+    // @ts-ignore
     this.zoomSelection$.on('dblclick.zoom', null);
   }
+  // @ts-ignore
   if (this.zoom.x) {
+    // @ts-ignore
     const xlock = this.rootSelection$.select('.xlock');
     xlock.on('click', () => {
       this.xCanZoom$ = !this.xCanZoom$;
       xlock.select('path').attr('d', this.xCanZoom$ ? unlockPath : lockPath);
     });
   }
+  // @ts-ignore
   if (this.zoom.y) {
+    // @ts-ignore
     const ylock = this.rootSelection$.select('.ylock');
     ylock.on('click', () => {
       this.yCanZoom$ = !this.yCanZoom$;
       ylock.select('path').attr('d', this.yCanZoom$ ? unlockPath : lockPath);
     });
   }
+  // @ts-ignore
   if (this.zoom.x || this.zoom.y) {
+    // @ts-ignore
     this.rootSelection$.select('.reset').on('click', () => {
+      // @ts-ignore
       this.reset$();
+      // @ts-ignore
       this.reset();
     });
   }
+  // @ts-ignore
   if (this.download) {
+    // @ts-ignore
     this.rootSelection$.select('.download').on('click', () => {
+      // @ts-ignore
       if (this.download.action) {
+        // @ts-ignore
         this.download.action(() => {
+          // @ts-ignore
           this.downloadImage();
+          // @ts-ignore
         }, this.rootSelection$);
       } else {
+        // @ts-ignore
         this.downloadImage();
       }
     });
@@ -918,9 +1049,11 @@ class BaseChart {
 
   render(tf, ax = 'xy', noTransition) {
     this.rendered = true;
+    // @ts-ignore
     const transform = tf || d3.zoomTransform(this.zoomSelection$.node());
     // 对this.zoomSelection$调用this.zoomer$.transform函数变换到指定的transform
     // 变换过程中用240ms及ease函数进行transition
+    // @ts-ignore
     (noTransition ? this.zoomSelection$ : this.zoomSelection$.transition().duration(240).ease(d3.easeLinear)).call(
       this.zoomer$.transform,
       transform,
@@ -951,6 +1084,7 @@ class BaseChart {
     // 根据data计算domain
     const needCompute = axisType.filter((key) => this.scale[key] && !this.scale[key].domain);
     if (needCompute.length > 0) {
+      // @ts-ignore
       this.dataDomains$ = computeDomain(this.data, needCompute) || {};
       updateScale.call(this);
       updateZoom.call(this);
@@ -1049,6 +1183,7 @@ class BaseChart {
     this.rendered = false;
     this.data = {};
     this.zoomer$.on('start', null).on('zoom', null).on('end', null);
+    // @ts-ignore
     this.zoomSelection$
       .on('mouseover', null)
       .on('mouseout', null)
@@ -1056,6 +1191,7 @@ class BaseChart {
       .on('dblclick.zoom', null)
       .on('click', null)
       .on('contextmenu', null);
+    // @ts-ignore
     if (this.unBindResize$) this.unBindResize$();
     this.rootSelection$.remove();
     this.rootSelection$ = null;
@@ -1066,9 +1202,12 @@ class BaseChart {
       const event = document.createEvent('Event');
       event.initEvent('resize', true, true);
       window.dispatchEvent(event);
+      // @ts-ignore
     } else if (document.createEventObject) {
+      // @ts-ignore
       const event = document.createEventObject();
       event.type = 'onresize';
+      // @ts-ignore
       window.fireEvent('onresize', event);
     }
     return this;

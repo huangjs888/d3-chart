@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-11-17 14:32:11
+ * @LastEditTime: 2021-12-07 17:51:06
  * @Description: ******
  */
 
@@ -11,6 +11,7 @@ import { HeatMap, LineGraph } from '../src/index';
 import './data';
 import './index.less';
 
+// @ts-ignore
 const data = window.CHART_DATA;
 
 const exponentFormat = format('.4~g');

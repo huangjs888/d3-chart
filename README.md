@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-05-10 15:55:29
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-11-12 14:58:03
+ * @LastEditTime: 2021-11-22 11:49:07
  * @Description: ******
 -->
 ## d3-chart
@@ -19,18 +19,17 @@
 import { format } from 'd3-format';
 import { HeatMap, LineGraph } from '../src/index';
 import './data';
-import './index.less';
 
-// data 查看data.js
 const data = window.CHART_DATA;
 
 const exponentFormat = format('.4~g');
 
 const heatMap = new HeatMap({
   container: '#heatmap',
-  padding: [20, 20, 36, 62],
+  padding: [20, 62, 36, 62],
   download: 'png',
-  tooptip: { cross: 'xy' },
+  colorBar: { show: true, width: 22, left: 12, right: 50 },
+  tooptip: { cross: 'xy', select: 'x' },
   zoom: {
     x: {
       domain: 'x',
@@ -55,6 +54,13 @@ const heatMap = new HeatMap({
       type: 'linear',
       label: '距离',
       unit: 'm',
+    },
+    y2: {
+      type: 'linear',
+      domain: [0, 0.6],
+      format: (v) => Math.round(v * 10000) / 10000,
+      label: '厚度',
+      unit: 'mm',
     },
     z: {
       label: '值',
@@ -96,10 +102,18 @@ const lineGraph = new LineGraph({
     },
   },
 });
-// 热力图双击事件
+let count = 1;
 heatMap.setEvent('dblclick', (e, data) => {
-  if (data) {
-    const { x, y, z } = data;
+  count++;
+  heatMap.setDomain({
+    z: [
+      1,
+      ['#003ddf', '#00acc0', '#5afa00', '#ffff00', '#ffa500', '#ff0000'],
+      [0 * count, 0.2 * count, 0.4 * count, 0.6 * count, 0.8 * count, 1 * count],
+    ],
+  });
+  if (data.xSelect) {
+    const { x, y, z } = data.xSelect;
     lineGraph
       .setData({
         line: [
@@ -121,7 +135,6 @@ heatMap.setEvent('dblclick', (e, data) => {
 
 const heatData = { x: [], y: [], z: [] };
 
-// 对数据解析一下
 data.forEach(({ time, step, value }, i) => {
   heatData.x[i] = +time;
   value.forEach((val, j) => {

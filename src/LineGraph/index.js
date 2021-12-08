@@ -2,13 +2,13 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-11-15 14:35:50
- * @Description: ******
+ * @LastEditTime: 2021-12-07 17:49:21
+ * @Description: 默认LineGraph构造器
  */
 
 import * as d3 from 'd3';
-import BaseChart from './BaseChart';
-import * as util from './util';
+import BaseChart from '../BaseChart';
+import * as util from '../util';
 
 function lineLabel() {
   const { onlyOneMerge } = this.tooptip;
@@ -17,6 +17,7 @@ function lineLabel() {
   this.rootSelection$
     .select('.zLabel')
     .selectAll('g.line-legend')
+    // @ts-ignore
     .each((d, i, g) => {
       totalWidth -= +d3.select(g[i]).select('rect').attr('width');
     })
@@ -44,7 +45,7 @@ function lineLabel() {
                 .attr('fill', 'none')
                 .attr('stroke', isHide ? '#aaaa' : d.color || 'inherit')
                 .attr('stroke-width', 4)
-                .attr('transform', 'translate(0,6),scale(0.5)')
+                .attr('transform', `translate(0,${-this.fontSize / 2}),scale(0.5)`)
                 // .attr('d', 'M0 6 C4 0,8 0,12 6 S20 12,24 6') // 曲线
                 .attr('d', 'M0 6,28 6');
             }
@@ -215,6 +216,7 @@ function updateLine() {
   if (this.smooth >= 1) {
     curve = d3.curveBasis; // 平滑曲线
   } else if (this.smooth < 1 && this.smooth > 0) {
+    // @ts-ignore
     curve = d3.curveBundle(this.smooth); // 平滑度为0.8曲线
   }
   this.line$.curve(curve);
@@ -265,7 +267,9 @@ class LineGraph extends BaseChart {
         .selectAll('path')
         .attr('d', (d) =>
           this.line$
+            // @ts-ignore
             .x(({ x, x2 }) => (typeof x === 'undefined' ? x2Scale(x2 || 0) : xScale(x || 0)))
+            // @ts-ignore
             .y(({ y, y2 }) => (typeof y === 'undefined' ? y2Scale(y2 || 0) : yScale(y || 0)))(d.data)
         );
     };
