@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-12-07 17:51:06
+ * @LastEditTime: 2021-12-08 17:13:40
  * @Description: ******
  */
 
@@ -66,9 +66,10 @@ const heatMap = new HeatMap({
 
 const lineGraph = new LineGraph({
   container: '#linegraph',
-  padding: [20, 12, 40, 62],
+  padding: [40, 60],
   smooth: 1,
-  tooptip: { cross: 'x', onlyOneMerge: true },
+  download: 'png',
+  tooptip: { cross: 'x', onlyOneMerge: false },
   zoom: {
     x: {
       domain: 'x',
@@ -81,8 +82,8 @@ const lineGraph = new LineGraph({
   scale: {
     x: {
       type: 'linear',
-      label: '距离',
-      unit: 'm',
+      label: '臭氧浓度',
+      unit: 'ug/m³',
     },
     y: {
       type: 'linear',
@@ -116,6 +117,16 @@ heatMap.setEvent('dblclick', (e, data) => {
             data:
               z.map((v, i) => ({
                 y: v,
+                x: y[i],
+              })) || [],
+          },
+          {
+            key: x + 'o',
+            label: x,
+            color: 'green',
+            data:
+              z.map((v, i) => ({
+                y: v + 1,
                 x: y[i],
               })) || [],
           },

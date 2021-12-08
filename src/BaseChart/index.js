@@ -2,13 +2,14 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-12-07 17:48:16
+ * @LastEditTime: 2021-12-08 17:17:28
  * @Description: 基础图表构造器
  */
 
 import * as d3 from 'd3';
 import * as util from '../util';
 
+const iconSize = 18;
 const downloadPath =
   'M505.7 661a8 8 0 0012.6 0l112-141.7c4.1-5.2.4-12.9-6.3-12.9h-74.1V168c0-4.4-3.6-8-8-8h-60c-4.4 0-8 3.6-8 8v338.3H400c-6.7 0-10.4 7.7-6.3 12.9l112 141.8zM878 626h-60c-4.4 0-8 3.6-8 8v154H214V634c0-4.4-3.6-8-8-8h-60c-4.4 0-8 3.6-8 8v198c0 17.7 14.3 32 32 32h684c17.7 0 32-14.3 32-32V634c0-4.4-3.6-8-8-8z';
 const resetPath =
@@ -378,26 +379,38 @@ function updateElement(size) {
   // @ts-ignore
   this.rootSelection$.select('clipPath').select('rect').attr('width', zw).attr('height', zh);
   // @ts-ignore
+  const baselineDelt = this.fontSize + 2;
+  // @ts-ignore
   if (this.scale.x) {
     group.select('.xAxis').attr('transform', `translate(0,${zh})`);
     // @ts-ignore
-    group.select('.xLabel').attr('transform', `translate(${zw / 2} ${zh + padding[2] - 2}) rotate(0)`);
+    group
+      .select('.xLabel')
+      // @ts-ignore
+      .attr('transform', `translate(${zw / 2} ${zh + padding[2] - iconSize + baselineDelt}) rotate(0)`);
   }
   // @ts-ignore
   if (this.scale.x2) {
-    // @ts-ignore
-    group.select('.x2Label').attr('transform', `translate(${zw / 2} ${this.fontSize - padding[0]}) rotate(0)`);
+    group
+      .select('.x2Label')
+      // @ts-ignore
+      .attr('transform', `translate(${zw / 2} ${baselineDelt - padding[0]}) rotate(0)`);
   }
   // @ts-ignore
   if (this.scale.y) {
-    // @ts-ignore
-    group.select('.yLabel').attr('transform', `translate(${this.fontSize - padding[3]} ${zh / 2}) rotate(-90)`);
+    group
+      .select('.yLabel')
+      // @ts-ignore
+      .attr('transform', `translate(${baselineDelt - padding[3]} ${zh / 2}) rotate(-90)`);
   }
   // @ts-ignore
   if (this.scale.y2) {
     group.select('.y2Axis').attr('transform', `translate(${zw},0)`);
     // @ts-ignore
-    group.select('.y2Label').attr('transform', `translate(${zw + padding[1]} ${zh / 2}) rotate(-90)`);
+    group
+      .select('.y2Label')
+      // @ts-ignore
+      .attr('transform', `translate(${zw + padding[1] - iconSize + baselineDelt} ${zh / 2}) rotate(-90)`);
   }
   // @ts-ignore
   const svgDiv = this.rootSelection$
@@ -411,13 +424,18 @@ function updateElement(size) {
     svgDiv
       .select('.xlock')
       // @ts-ignore
-      .style('top', `${zh + padding[2] - 21}px`)
-      .style('left', `${zw - 12}px`);
+      .style('top', `${this.scale.x ? zh + padding[2] - iconSize : -padding[0]}px`)
+      // @ts-ignore
+      .style('left', `${this.scale.y ? zw - iconSize / 2 : -iconSize / 2}px`);
   }
   // @ts-ignore
   if (this.zoom.y) {
-    // @ts-ignore
-    svgDiv.select('.ylock').style('top', '-20px').style('left', `${-padding[3]}px`);
+    svgDiv
+      .select('.ylock')
+      // @ts-ignore
+      .style('top', `${this.scale.x ? -iconSize / 2 : zh - iconSize / 2}px`)
+      // @ts-ignore
+      .style('left', `${this.scale.y ? -padding[3] : zw + padding[1] - iconSize}px`);
   }
   let offset = 5;
   // @ts-ignore
@@ -425,9 +443,9 @@ function updateElement(size) {
     svgDiv
       .select('.reset')
       // @ts-ignore
-      .style('top', `${-padding[0] - 3}px`)
+      .style('top', `${this.scale.x ? -padding[0] : zh + padding[2] - iconSize}px`)
       // @ts-ignore
-      .style('left', `${this.scale.y ? zw - offset - this.fontSize : offset}px`);
+      .style('left', `${this.scale.y ? zw - offset - iconSize : offset}px`);
     offset += 23;
   }
   // @ts-ignore
@@ -435,9 +453,9 @@ function updateElement(size) {
     svgDiv
       .select('.download')
       // @ts-ignore
-      .style('top', `${-padding[0] - 3}px`)
+      .style('top', `${this.scale.x ? -padding[0] : zh + padding[2] - iconSize}px`)
       // @ts-ignore
-      .style('left', `${this.scale.y ? zw - offset - this.fontSize : offset}px`);
+      .style('left', `${this.scale.y ? zw - offset - iconSize : offset}px`);
     offset += 23;
   }
   group
@@ -448,7 +466,7 @@ function updateElement(size) {
       // @ts-ignore
       `translate(${this.scale.y ? zw - offset : offset} ${
         // @ts-ignore
-        this.scale.x ? this.fontSize - padding[0] : zh + padding[2] - 2
+        (this.scale.x ? -padding[0] : zh + padding[2] - iconSize) + baselineDelt
       })`
     );
 

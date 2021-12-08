@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-12-07 15:02:48
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-12-07 17:48:28
+ * @LastEditTime: 2021-12-08 17:12:45
  * @Description: 按需生成HeatMap构造器
  */
 
@@ -538,6 +538,8 @@ export default function generateHeatMap(superName) {
       const tempText = `${this.scale.z.label || ''}${this.scale.z.subLabel ? ` ( ${this.scale.z.subLabel} )` : ''}${
         this.scale.z.unit ? ` ( ${this.scale.z.unit} )` : ''
       }`;
+      // @ts-ignore
+      const baselineDelt = this.fontSize + 2;
       const heatLabel = this.rootSelection$
         .select('g.group')
         .append('g')
@@ -548,12 +550,12 @@ export default function generateHeatMap(superName) {
           // @ts-ignore
           `translate(${this.scale.y ? 10 : this.width$ - 10},${
             // @ts-ignore
-            this.scale.x ? this.fontSize - this.padding[0] : this.height$ + this.padding[2] - 2
+            this.scale.x ? baselineDelt - this.padding[0] : this.height$ + this.padding[2] - 18 + baselineDelt
           })`
         );
       heatLabel
         .append('text')
-        .attr('dx', util.measureSvgText(tempText, this.fontSize) / 2)
+        .attr('dx', ((this.scale.y ? 1 : -1) * util.measureSvgText(tempText, this.fontSize)) / 2)
         .text(tempText);
       if (this.tooptip) {
         const { select } = this.tooptip;
@@ -678,7 +680,7 @@ export default function generateHeatMap(superName) {
         heatLabel.attr(
           'transform',
           `translate(${this.scale.y ? 10 : width - 10},${
-            this.scale.x ? this.fontSize - padding[0] : height + padding[2] - 2
+            this.scale.x ? baselineDelt - padding[0] : height + padding[2] - 18 + baselineDelt
           })`
         );
         if (colorBar) {

@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-12-07 17:49:21
+ * @LastEditTime: 2021-12-08 17:11:33
  * @Description: 默认LineGraph构造器
  */
 
@@ -17,9 +17,8 @@ function lineLabel() {
   this.rootSelection$
     .select('.zLabel')
     .selectAll('g.line-legend')
-    // @ts-ignore
     .each((d, i, g) => {
-      totalWidth -= +d3.select(g[i]).select('rect').attr('width');
+      totalWidth += +d3.select(g[i]).select('rect').attr('width');
     })
     .data(this.data.line.slice().reverse())
     .join(
@@ -29,8 +28,7 @@ function lineLabel() {
           .attr('class', 'line-legend')
           .attr('transform', (d, i, g) => {
             const group = d3.select(g[i]);
-            const width = util.measureSvgText(d.label, this.fontSize) + dx + 5;
-            totalWidth -= width;
+            const width = util.measureSvgText(d.label, this.fontSize) + dx + 10;
             const isHide = this.filter$.findIndex((f) => f.key === d.key) !== -1;
             group
               .insert('rect')
@@ -56,8 +54,9 @@ function lineLabel() {
               .attr('text-anchor', 'start')
               .attr('stroke-width', 0.5)
               .text(d.label);
+            totalWidth = this.scale.y ? -totalWidth - width : totalWidth + 10;
             if (onlyOneMerge) {
-              totalWidth -= (this.width$ - (width - 5)) / 2;
+              totalWidth = (this.width$ - width + 10) / 2;
             }
             return `translate(${totalWidth},0)`;
           });
