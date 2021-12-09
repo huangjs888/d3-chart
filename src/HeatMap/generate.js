@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-12-07 15:02:48
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-12-08 17:12:45
+ * @LastEditTime: 2021-12-09 17:29:01
  * @Description: 按需生成HeatMap构造器
  */
 
@@ -11,6 +11,8 @@ import BaseChart from '../BaseChart';
 import LineGraph from '../LineGraph';
 import * as util from '../util';
 import mixin from '../util/mixin';
+
+const iconSize = 18;
 
 const prefixSIFormat = d3.format('~s');
 
@@ -550,7 +552,7 @@ export default function generateHeatMap(superName) {
           // @ts-ignore
           `translate(${this.scale.y ? 10 : this.width$ - 10},${
             // @ts-ignore
-            this.scale.x ? baselineDelt - this.padding[0] : this.height$ + this.padding[2] - 18 + baselineDelt
+            this.scale.x ? baselineDelt - this.padding[0] : this.height$ + this.padding[2] - iconSize + baselineDelt
           })`
         );
       heatLabel
@@ -680,7 +682,7 @@ export default function generateHeatMap(superName) {
         heatLabel.attr(
           'transform',
           `translate(${this.scale.y ? 10 : width - 10},${
-            this.scale.x ? baselineDelt - padding[0] : height + padding[2] - 18 + baselineDelt
+            this.scale.x ? baselineDelt - padding[0] : height + padding[2] - iconSize + baselineDelt
           })`
         );
         if (colorBar) {
@@ -773,7 +775,7 @@ export default function generateHeatMap(superName) {
         this.rootSelection$
           .select('.heatLabel')
           .select('text')
-          .attr('dx', util.measureSvgText(tempText, this.fontSize) / 2)
+          .attr('dx', ((this.scale.y ? 1 : -1) * util.measureSvgText(tempText, this.fontSize)) / 2)
           .text(tempText);
         if (render) {
           this.render();
