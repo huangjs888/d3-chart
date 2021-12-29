@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-12-09 17:27:46
+ * @LastEditTime: 2021-12-29 17:35:02
  * @Description: 基础图表构造器
  */
 
@@ -620,7 +620,7 @@ function createElement(container, size) {
           {
             sourceEvent: e || null,
             target: this.rootSelection$,
-            transform: [...this.zoomSelection$.datum(), d3.zoomTransform(this.zoomSelection$.node())],
+            transform: [d3.zoomTransform(this.zoomSelection$.node()), ...this.zoomSelection$.datum()],
             scaleAxis: getScaleAxis.call(this),
             type: 'resize',
           },
@@ -674,7 +674,7 @@ function bindEvents() {
       // @ts-ignore
       this.zoomstart$.call(null, {
         ...e,
-        transform: [xTransform, yTransform, transform],
+        transform: [transform, xTransform, yTransform],
         scaleAxis: getScaleAxis.call(this),
       });
     })
@@ -716,14 +716,23 @@ function bindEvents() {
         }
         transform0 = transform;
       } else if (sourceEvent.transform) {
-        // 跳到指定的transform，则直接赋值到xy
         // 如果存在xy缩放，则会有补间调用，万一补间一半，触发了滚轮或移动，则补间会停止，造成无法到达指定缩放位置，所以xy锁定的时候应该忽略补间
-        const notZoom = !this.xCanZoom$ && !this.yCanZoom$;
+        // e.transform和sourceEvent.transform原本是一样的，但是动画补间的每一次调用时e.transform会变化，直到最后一次才会和sourceEvent.transform一样
+        // sourceEvent.transform是不变的，是最终的指定的transform
+        let xtf = transform;
+        let ytf = transform;
+        if (Array.isArray(sourceEvent.transform)) {
+          xtf = sourceEvent.transform[1];
+          ytf = sourceEvent.transform[2];
+        } else {
+          if (!this.xCanZoom$) xtf = sourceEvent.transform;
+          if (!this.yCanZoom$) ytf = sourceEvent.transform;
+        }
         if (sourceEvent.zoomX) {
-          xTransform = notZoom ? sourceEvent.transform : transform;
+          xTransform = xtf;
         }
         if (sourceEvent.zoomY) {
-          yTransform = notZoom ? sourceEvent.transform : transform;
+          yTransform = ytf;
         }
       }
       // @ts-ignore
@@ -739,7 +748,7 @@ function bindEvents() {
       // @ts-ignore
       this.zooming$.call(null, {
         ...e,
-        transform: [xTransform, yTransform, transform],
+        transform: [transform, xTransform, yTransform],
         scaleAxis,
       });
     })
@@ -762,7 +771,7 @@ function bindEvents() {
       this.zoomend$.call(null, {
         ...e,
         // @ts-ignore
-        transform: [...this.zoomSelection$.datum(), transform],
+        transform: [transform, ...this.zoomSelection$.datum()],
         scaleAxis: getScaleAxis.call(this),
       });
     });
@@ -780,7 +789,7 @@ function bindEvents() {
         // @ts-ignore
         target: this.zoomSelection$,
         // @ts-ignore
-        transform: [...this.zoomSelection$.datum(), d3.zoomTransform(this.zoomSelection$.node())],
+        transform: [d3.zoomTransform(this.zoomSelection$.node()), ...this.zoomSelection$.datum()],
         scaleAxis: getScaleAxis.call(this),
         type: 'mouseover',
       });
@@ -814,7 +823,7 @@ function bindEvents() {
         // @ts-ignore
         target: this.zoomSelection$,
         // @ts-ignore
-        transform: [...this.zoomSelection$.datum(), d3.zoomTransform(this.zoomSelection$.node())],
+        transform: [d3.zoomTransform(this.zoomSelection$.node()), ...this.zoomSelection$.datum()],
         scaleAxis: getScaleAxis.call(this),
         type: 'mouseout',
       });
@@ -872,7 +881,7 @@ function bindEvents() {
         // @ts-ignore
         target: this.zoomSelection$,
         // @ts-ignore
-        transform: [...this.zoomSelection$.datum(), d3.zoomTransform(this.zoomSelection$.node())],
+        transform: [d3.zoomTransform(this.zoomSelection$.node()), ...this.zoomSelection$.datum()],
         scaleAxis,
         type: 'mousemove',
       });
@@ -886,7 +895,7 @@ function bindEvents() {
         // @ts-ignore
         target: this.zoomSelection$,
         // @ts-ignore
-        transform: [...this.zoomSelection$.datum(), d3.zoomTransform(this.zoomSelection$.node())],
+        transform: [d3.zoomTransform(this.zoomSelection$.node()), ...this.zoomSelection$.datum()],
         scaleAxis: getScaleAxis.call(this),
         type: 'click',
       });
@@ -900,7 +909,7 @@ function bindEvents() {
         // @ts-ignore
         target: this.zoomSelection$,
         // @ts-ignore
-        transform: [...this.zoomSelection$.datum(), d3.zoomTransform(this.zoomSelection$.node())],
+        transform: [d3.zoomTransform(this.zoomSelection$.node()), ...this.zoomSelection$.datum()],
         scaleAxis: getScaleAxis.call(this),
         type: 'contextmenu',
       });
@@ -915,7 +924,7 @@ function bindEvents() {
         // @ts-ignore
         target: this.zoomSelection$,
         // @ts-ignore
-        transform: [...this.zoomSelection$.datum(), d3.zoomTransform(this.zoomSelection$.node())],
+        transform: [d3.zoomTransform(this.zoomSelection$.node()), ...this.zoomSelection$.datum()],
         scaleAxis: getScaleAxis.call(this),
         type: 'dblclick',
       });
@@ -931,8 +940,12 @@ function bindEvents() {
     // @ts-ignore
     const xlock = this.rootSelection$.select('.xlock');
     xlock.on('click', () => {
-      this.xCanZoom$ = !this.xCanZoom$;
-      xlock.select('path').attr('d', this.xCanZoom$ ? unlockPath : lockPath);
+      // @ts-ignore
+      if (this.destroyed) return;
+      // @ts-ignore
+      this.setCanZoom('x', !this.xCanZoom$);
+      // @ts-ignore
+      this.canZoom$('x', this.xCanZoom$);
     });
   }
   // @ts-ignore
@@ -940,8 +953,12 @@ function bindEvents() {
     // @ts-ignore
     const ylock = this.rootSelection$.select('.ylock');
     ylock.on('click', () => {
-      this.yCanZoom$ = !this.yCanZoom$;
-      ylock.select('path').attr('d', this.yCanZoom$ ? unlockPath : lockPath);
+      // @ts-ignore
+      if (this.destroyed) return;
+      // @ts-ignore
+      this.setCanZoom('y', !this.yCanZoom$);
+      // @ts-ignore
+      this.canZoom$('y', this.yCanZoom$);
     });
   }
   // @ts-ignore
@@ -949,15 +966,19 @@ function bindEvents() {
     // @ts-ignore
     this.rootSelection$.select('.reset').on('click', () => {
       // @ts-ignore
-      this.reset$();
+      if (this.destroyed) return;
       // @ts-ignore
       this.reset();
+      // @ts-ignore
+      this.reset$();
     });
   }
   // @ts-ignore
   if (this.download) {
     // @ts-ignore
     this.rootSelection$.select('.download').on('click', () => {
+      // @ts-ignore
+      if (this.destroyed) return;
       // @ts-ignore
       if (this.download.action) {
         // @ts-ignore
@@ -1059,21 +1080,22 @@ class BaseChart {
     this.zoomend$ = util.noop;
     this.resize$ = util.noop;
     this.reset$ = util.noop;
+    this.canZoom$ = util.noop;
   }
 
-  reset(noTransition) {
-    this.render(d3.zoomIdentity, 'xy', noTransition);
+  reset(ta) {
+    this.render(d3.zoomIdentity, 'xy', ta);
     return this;
   }
 
-  render(tf, ax = 'xy', noTransition) {
+  render(tf, ax = 'xy', ta = true) {
     this.rendered = true;
     // @ts-ignore
-    const transform = tf || d3.zoomTransform(this.zoomSelection$.node());
+    const transform = (Array.isArray(tf) ? tf[0] : tf) || d3.zoomTransform(this.zoomSelection$.node());
     // 对this.zoomSelection$调用this.zoomer$.transform函数变换到指定的transform
     // 变换过程中用240ms及ease函数进行transition
     // @ts-ignore
-    (noTransition ? this.zoomSelection$ : this.zoomSelection$.transition().duration(240).ease(d3.easeLinear)).call(
+    (!ta ? this.zoomSelection$ : this.zoomSelection$.transition().duration(240).ease(d3.easeLinear)).call(
       this.zoomer$.transform,
       transform,
       null,
@@ -1087,6 +1109,38 @@ class BaseChart {
     return this;
   }
 
+  getCanZoom() {
+    return [this.xCanZoom$, this.yCanZoom$];
+  }
+
+  getTransform() {
+    // @ts-ignore
+    return [d3.zoomTransform(this.zoomSelection$.node()), ...this.zoomSelection$.datum()];
+  }
+
+  setCanZoom(ax = 'xy', canZoom = true) {
+    let xCanZoom = canZoom;
+    let yCanZoom = canZoom;
+    if (Array.isArray(canZoom)) {
+      [xCanZoom = true, yCanZoom = true] = canZoom;
+    }
+    if (ax.indexOf('x') !== -1) {
+      this.xCanZoom$ = xCanZoom;
+      this.rootSelection$
+        .select('.xlock')
+        .select('path')
+        .attr('d', xCanZoom ? unlockPath : lockPath);
+    }
+    if (ax.indexOf('y') !== -1) {
+      this.yCanZoom$ = yCanZoom;
+      this.rootSelection$
+        .select('.ylock')
+        .select('path')
+        .attr('d', yCanZoom ? unlockPath : lockPath);
+    }
+    return this;
+  }
+
   setEvent(type, handler) {
     if (typeof handler === 'function') {
       const oldHandler = this[`${type}$`];
@@ -1094,6 +1148,24 @@ class BaseChart {
         handler.call(null, ...args, oldHandler.call(null, ...args));
       };
     }
+  }
+
+  runEvent(type, data = {}) {
+    if (this.destroyed) return;
+    const { sourceEvent, transform, scaleAxis, target } = data;
+    this[`${type}$`].call(null, {
+      type,
+      sourceEvent: sourceEvent || null,
+      // @ts-ignore
+      target: target || this.zoomSelection$,
+      // @ts-ignore
+      transform: transform || [d3.zoomTransform(this.zoomSelection$.node()), ...this.zoomSelection$.datum()],
+      scaleAxis: scaleAxis || getScaleAxis.call(this),
+    });
+  }
+
+  getData() {
+    return this.data;
   }
 
   setData(data, render, computeDomain = util.noop) {

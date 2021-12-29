@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-05-10 15:55:29
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-11-22 11:49:07
+ * @LastEditTime: 2021-12-29 16:24:20
  * @Description: ******
 -->
 ## d3-chart
@@ -17,7 +17,7 @@
 ```
 ```javascript
 import { format } from 'd3-format';
-import { HeatMap, LineGraph } from '../src/index';
+import { LineGraph, HeatMap } from '@huangjs888/d3-chart';
 import './data';
 
 const data = window.CHART_DATA;

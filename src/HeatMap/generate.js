@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-12-07 15:02:48
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-12-09 17:29:01
+ * @LastEditTime: 2021-12-29 17:34:19
  * @Description: 按需生成HeatMap构造器
  */
 
@@ -247,12 +247,14 @@ function drawend(zContext, { xScale, yScale }) {
   zContext.restore();
 }
 
-function drawing(zContext, { xScale, yScale }, [lineMarkX, lineMarkY]) {
+function drawing(zContext, { xScale, yScale }) {
   if (this.showHeat$) {
+    const lineMarkX = this.lineMark$[0];
     if (lineMarkX.node()) {
       const xp = xScale(lineMarkX.datum()) || (!this.scale.x ? this.width$ : 0);
       lineMarkX.style('left', `${xp}px`).style('display', xp < 0 || xp >= this.width$ ? 'none' : 'block');
     }
+    const lineMarkY = this.lineMark$[1];
     if (lineMarkY.node()) {
       const yp = yScale(lineMarkY.datum()) || (!this.scale.y ? 0 : this.height$);
       lineMarkY.style('top', `${yp}px`).style('display', yp < 0 || yp >= this.height$ ? 'none' : 'block');
@@ -395,92 +397,39 @@ function updateScale() {
             return tick;
           },
           (update) => {
-            const tick = update.attr(
-              'transform',
-              (v) => `translate(${width},${height * (1 - (v - startDomain) / deltDomain)})`
-            );
-            tick.select('text').text((v) => zFormat(v));
-            return tick;
+            update.attr('transform', (v) => `translate(${width},${height * (1 - (v - startDomain) / deltDomain)})`);
+            update.select('text').text((v) => zFormat(v));
+            return update;
           }
         );
     }
   }
 }
 
-function doubleClick(point, { xScale, yScale }, [lineMarkX, lineMarkY]) {
-  const data = this.data.heat;
-  const { select, average } = this.tooptip;
-  const result = {};
+function doubleClick(point, { xScale, yScale }) {
+  let result = {};
   if (this.showHeat$) {
-    const selectX = select.indexOf('x') !== -1;
-    const selectY = select.indexOf('y') !== -1;
-    let zval = [];
+    const heatData = this.data.heat;
     let [x0, y0] = point;
-    if (selectX) {
-      // 竖线
-      let xval = +xScale.invert(x0);
-      let xi = util.findNearIndex(xval, data.x, !average);
+    // @ts-ignore
+    let [xval, yval] = [];
+    const lineMarkX = this.lineMark$[0];
+    if (lineMarkX.node()) {
       // @ts-ignore
-      if (xi.length === 2) {
-        const [xi0, xi1] = xi;
-        if (xi0 < 0) {
-          xi = xi1;
-        } else if (xi1 < 0 || xi0 === xi1) {
-          xi = xi0;
-        }
-      }
-      // @ts-ignore
-      if (xi.length === 2) {
-        const xval0 = +data.x[xi[0]];
-        const xval1 = +data.x[xi[1]];
-        const rate = (xval - xval0) / (xval1 - xval0);
-        zval = data.z.map((v) => rate * (v[xi[1]] - v[xi[0]]) + v[xi[0]]);
-      } else {
-        // @ts-ignore
-        xval = data.x[xi];
-        x0 = xScale(xval);
-        // @ts-ignore
-        zval = data.z.map((v) => v[xi]);
-      }
-      result.xSelect = { x: xval, y: data.y, z: zval };
-      if (lineMarkX.node() && x0 !== 'undefined') {
-        lineMarkX.style('left', `${x0}px`).style('display', 'block').datum(xval);
-      }
+      xval = Math.max(Math.min(+xScale.invert(x0), heatData.x[heatData.x.length - 1]), heatData.x[0]);
+      x0 = xScale(xval);
+      lineMarkX.style('left', `${x0}px`).style('display', 'block');
     }
-    if (selectY) {
-      // 横线
-      let yval = +yScale.invert(y0);
-      let yi = util.findNearIndex(yval, data.y, !average);
+    const lineMarkY = this.lineMark$[1];
+    if (lineMarkY.node()) {
       // @ts-ignore
-      if (yi.length === 2) {
-        const [yi0, yi1] = yi;
-        if (yi0 < 0) {
-          yi = yi1;
-        } else if (yi1 < 0 || yi0 === yi1) {
-          yi = yi0;
-        }
-      }
-      // @ts-ignore
-      if (yi.length === 2) {
-        const yval0 = +data.y[yi[0]];
-        const yval1 = +data.y[yi[1]];
-        const rate = (yval - yval0) / (yval1 - yval0);
-        zval = data.z[yi[0]].map((v0, i) => {
-          const v1 = data.z[yi[1]][i];
-          return rate * (v1 - v0) + v0;
-        });
-      } else {
-        // @ts-ignore
-        yval = data.y[yi];
-        y0 = yScale(yval);
-        // @ts-ignore
-        zval = data.z[yi] || [];
-      }
-      result.ySelect = { x: data.x, y: yval, z: zval };
-      if (lineMarkY.node() && y0 !== 'undefined') {
-        lineMarkY.style('top', `${y0}px`).style('display', 'block').datum(yval);
-      }
+      yval = Math.max(Math.min(+yScale.invert(y0), heatData.y[heatData.y.length - 1]), heatData.y[0]);
+      y0 = yScale(yval);
+      lineMarkY.style('top', `${y0}px`).style('display', 'block');
     }
+    this.setLineMark([xval, yval], (res) => {
+      result = res;
+    });
   }
   return result;
 }
@@ -581,6 +530,7 @@ export default function generateHeatMap(superName) {
       }
       // @ts-ignore
       const lineMark = [this.zoomSelection$.select('.x-linemark'), this.zoomSelection$.select('.y-linemark')];
+      this.lineMark$ = lineMark;
       const zCanvasParent = this.rootSelection$
         .insert('div', 'svg')
         .style('position', 'absolute')
@@ -641,7 +591,7 @@ export default function generateHeatMap(superName) {
         const { x, x2, y, y2 } = e.scaleAxis;
         const xScale = (x || x2).scale;
         const yScale = (y || y2).scale;
-        return doubleClick.call(this, d3.pointer(e.sourceEvent), { xScale, yScale }, lineMark);
+        return doubleClick.call(this, e.sourceEvent ? d3.pointer(e.sourceEvent) : [0, 0], { xScale, yScale });
       };
       const contextmenu$$ = this.contextmenu$;
       this.contextmenu$ = (e, ...args) => {
@@ -654,7 +604,7 @@ export default function generateHeatMap(superName) {
         const { x, x2, y, y2 } = e.scaleAxis;
         const xScale = (x || x2).scale;
         const yScale = (y || y2).scale;
-        drawing.call(this, zContext, { xScale, yScale }, lineMark);
+        drawing.call(this, zContext, { xScale, yScale });
       };
       const zoomend$$ = this.zoomend$;
       this.debounceDrawend$ = util.debounce(drawend, 450, { leading: false, trailing: true });
@@ -664,7 +614,7 @@ export default function generateHeatMap(superName) {
         const xScale = (x || x2).scale;
         const yScale = (y || y2).scale;
         this.debounceDrawend$.call(this, zContext, { xScale, yScale });
-        if (e.sourceEvent.type === 'call') {
+        if (!e.sourceEvent || e.sourceEvent.type === 'call') {
           util.delay(() => {
             this.debounceDrawend$.flush();
           }, 1);
@@ -710,6 +660,69 @@ export default function generateHeatMap(superName) {
       });
     }
 
+    getLineMark() {
+      const result = [];
+      const lineMarkX = this.lineMark$[0];
+      if (lineMarkX.node()) {
+        const xval = lineMarkX.datum();
+        result[0] = xval;
+      }
+      const lineMarkY = this.lineMark$[1];
+      if (lineMarkY.node()) {
+        const yval = lineMarkY.datum();
+        result[1] = yval;
+      }
+      return result;
+    }
+
+    setLineMark(lm, cb) {
+      const lineMark = lm || [];
+      const { average } = this.tooptip;
+      const heatData = this.data.heat;
+      let xSelect = null;
+      let ySelect = null;
+      // @ts-ignore
+      const lineMarkX = this.lineMark$[0];
+      if (lineMarkX.node()) {
+        const xval = !lineMark[0] && lineMark[0] !== 0 ? heatData.x[0] : lineMark[0];
+        lineMarkX.datum(xval);
+        let zval = [];
+        // xval在数据范围之内才可计算出zval
+        if (xval >= heatData.x[0] && xval <= heatData.x[heatData.x.length - 1]) {
+          let xi = util.findNearIndex(xval, heatData.x, !average);
+          // @ts-ignore
+          if (!average) xi = [xi, xi];
+          let xBin = 0;
+          if (xi[0] !== xi[1]) xBin = (xval - heatData.x[xi[0]]) / (heatData.x[xi[1]] - heatData.x[xi[0]]);
+          zval = heatData.z.map((v) => xBin * (v[xi[1]] - v[xi[0]]) + v[xi[0]]);
+        }
+        xSelect = { x: xval, y: heatData.y, z: zval };
+      }
+      const lineMarkY = this.lineMark$[1];
+      if (lineMarkY.node()) {
+        const yval = !lineMark[1] && lineMark[1] !== 0 ? heatData.y[0] : lineMark[1];
+        lineMarkY.datum(yval);
+        let zval = [];
+        // yval在数据范围之内才可计算出zval
+        if (yval >= heatData.y[0] && yval <= heatData.y[heatData.y.length - 1]) {
+          let yi = util.findNearIndex(yval, heatData.y, !average);
+          // @ts-ignore
+          if (!average) yi = [yi, yi];
+          let yBin = 0;
+          if (yi[0] !== yi[1]) yBin = (yval - heatData.y[yi[0]]) / (heatData.y[yi[1]] - heatData.y[yi[0]]);
+          zval = heatData.z[yi[0]].map((v0, i) => {
+            const v1 = heatData.z[yi[1]][i];
+            return yBin * (v1 - v0) + v0;
+          });
+        }
+        ySelect = { x: heatData.x, y: yval, z: zval };
+      }
+      if (typeof cb === 'function') {
+        cb({ xSelect, ySelect });
+      }
+      return this;
+    }
+
     setData(data, render, computeDomain) {
       if (!data) return this;
       const { heat, ...restData } = data || {};
@@ -731,16 +744,8 @@ export default function generateHeatMap(superName) {
               return domains;
             }
       );
-      // @ts-ignore
-      const lineMarkX = this.zoomSelection$.select('.x-linemark');
-      // @ts-ignore
-      const lineMarkY = this.zoomSelection$.select('.y-linemark');
-      if (lineMarkX.node()) {
-        lineMarkX.datum(this.data.heat.x[0]);
-      }
-      if (lineMarkY.node()) {
-        lineMarkY.datum(this.data.heat.y[0]);
-      }
+      // 将linemark归位到起点
+      this.setLineMark();
       if (render) {
         this.render();
       }

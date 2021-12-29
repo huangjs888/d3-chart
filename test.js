@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-10-15 16:12:44
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-12-07 16:30:33
+ * @LastEditTime: 2021-12-29 17:37:18
  * @Description: ******
  */
 
@@ -304,7 +304,8 @@ describe('HeatMap', () => {
     heatMap.setEvent('zoomstart', clearEvent);
     heatMap.setEvent('zooming', clearEvent);
     heatMap.setEvent('zoomend', clearEvent);
-    heatMap.render(d3.zoomIdentity.translate(100, -100).scale(2), 'xy', true);
+    // 第三个参数需要设置false，即没有transition，否则，因为延迟，这不会触发上面的事件
+    heatMap.render(d3.zoomIdentity.translate(100, -100).scale(2), 'xy', false);
     // @ts-ignore
     expect(clearEvent).toBeCalledTimes(3);
     // @ts-ignore
@@ -321,7 +322,8 @@ describe('HeatMap', () => {
     heatMap.setEvent('zoomstart', clearEvent);
     heatMap.setEvent('zooming', clearEvent);
     heatMap.setEvent('zoomend', clearEvent);
-    heatMap.reset(true);
+    // 参数需要设置false，即没有transition，否则，因为延迟，这不会触发上面的事件
+    heatMap.reset(false);
     // @ts-ignore
     expect(clearEvent).toBeCalledTimes(3);
     // @ts-ignore
@@ -439,7 +441,8 @@ describe('LineGraph', () => {
     lineGraph.setEvent('zoomstart', clearEvent);
     lineGraph.setEvent('zooming', clearEvent);
     lineGraph.setEvent('zoomend', clearEvent);
-    lineGraph.render(d3.zoomIdentity.translate(-100, 100).scale(0.2), 'y', true);
+    // 第三个参数需要设置false，即没有transition，否则，因为延迟，这不会触发上面的事件
+    lineGraph.render(d3.zoomIdentity.translate(-100, 100).scale(0.2), 'y', false);
     // @ts-ignore
     expect(clearEvent).toBeCalledTimes(3);
     // @ts-ignore
@@ -456,7 +459,8 @@ describe('LineGraph', () => {
     lineGraph.setEvent('zoomstart', clearEvent);
     lineGraph.setEvent('zooming', clearEvent);
     lineGraph.setEvent('zoomend', clearEvent);
-    lineGraph.reset(true);
+    // 参数需要设置false，即没有transition，否则，因为延迟，这不会触发上面的事件
+    lineGraph.reset(false);
     // @ts-ignore
     expect(clearEvent).toBeCalledTimes(3);
     // @ts-ignore

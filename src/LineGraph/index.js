@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-12-08 17:11:33
+ * @LastEditTime: 2021-12-21 13:46:47
  * @Description: 默认LineGraph构造器
  */
 
@@ -12,67 +12,53 @@ import * as util from '../util';
 
 function lineLabel() {
   const { onlyOneMerge } = this.tooptip;
-  const dx = onlyOneMerge ? 0 : 20;
-  let totalWidth = 0;
-  this.rootSelection$
-    .select('.zLabel')
-    .selectAll('g.line-legend')
-    .each((d, i, g) => {
-      totalWidth += +d3.select(g[i]).select('rect').attr('width');
-    })
-    .data(this.data.line.slice().reverse())
+  const pWidth = onlyOneMerge ? 0 : 20;
+  const color = (v, c) => (this.filter$.findIndex((f) => f.key === v.key) !== -1 ? '#aaa' : c);
+  const width = (v) => util.measureSvgText(v.label, this.fontSize) + pWidth;
+  let tWidth = 0;
+  const zlabel = this.rootSelection$.select('.zLabel');
+  zlabel.selectAll('g').remove();
+  zlabel
+    .selectAll('g')
+    .data(this.data.line)
     .join(
       (enter) => {
-        return enter
+        const legend = enter
           .append('g')
           .attr('class', 'line-legend')
-          .attr('transform', (d, i, g) => {
-            const group = d3.select(g[i]);
-            const width = util.measureSvgText(d.label, this.fontSize) + dx + 10;
-            const isHide = this.filter$.findIndex((f) => f.key === d.key) !== -1;
-            group
-              .insert('rect')
-              .attr('x', -2)
-              .attr('y', -2)
-              .attr('width', width)
-              .attr('height', 20)
-              .attr('fill', 'transparent');
-            if (!onlyOneMerge) {
-              group
-                .insert('path')
-                .attr('fill', 'none')
-                .attr('stroke', isHide ? '#aaaa' : d.color || 'inherit')
-                .attr('stroke-width', 4)
-                .attr('transform', `translate(0,${-this.fontSize / 2}),scale(0.5)`)
-                // .attr('d', 'M0 6 C4 0,8 0,12 6 S20 12,24 6') // 曲线
-                .attr('d', 'M0 6,28 6');
-            }
-            group
-              .insert('text')
-              .attr('dx', dx)
-              .attr('fill', isHide ? '#aaaa' : 'currentColor')
-              .attr('text-anchor', 'start')
-              .attr('stroke-width', 0.5)
-              .text(d.label);
-            totalWidth = this.scale.y ? -totalWidth - width : totalWidth + 10;
+          .attr('transform', (v) => {
+            let moveX = 0;
+            const w = width(v) + 5;
             if (onlyOneMerge) {
-              totalWidth = (this.width$ - width + 10) / 2;
+              moveX = this.scale.y ? -((this.width$ + w) / 2) : (this.width$ - w) / 2;
+            } else {
+              moveX = this.scale.y ? 5 - tWidth - w : tWidth;
+              tWidth += w;
             }
-            return `translate(${totalWidth},0)`;
+            return `translate(${moveX},0)`;
           });
+        if (!onlyOneMerge) {
+          legend
+            .insert('path')
+            .attr('fill', 'none')
+            .attr('stroke-width', 4)
+            .attr('transform', `translate(0,${-this.fontSize / 2}),scale(0.5)`)
+            .attr('d', this.smooth === 1 ? 'M0 6 C4 0,8 0,12 6 S20 12,24 6' : 'M0 6,28 6')
+            .attr('stroke', (v) => color(v, v.color || 'inherit'));
+        }
+        legend
+          .insert('text')
+          .attr('dx', pWidth)
+          .attr('text-anchor', 'start')
+          .attr('stroke-width', 0.5)
+          .text((v) => v.label)
+          .attr('fill', (v) => color(v, 'currentColor'));
+        return legend;
       },
-      (update) => {
-        return update.each((d, i, g) => {
-          const group = d3.select(g[i]);
-          const isHide = this.filter$.findIndex((f) => f.key === d.key) !== -1;
-          group.select('path').attr('stroke', isHide ? '#aaaa' : d.color || 'inherit');
-          group
-            .select('text')
-            .attr('fill', isHide ? '#aaaa' : 'currentColor')
-            .text(d.label);
-        });
-      }
+      (update) => update,
+      (exit) => exit.remove()
     );
+
   const showData = util.differenceWith(this.data.line, this.filter$, (a, b) => a.key === b.key);
   this.rootSelection$
     .select('.zAxis')
@@ -100,13 +86,25 @@ function tipCompute(prevRes, point, scaleAxis) {
     fData.forEach(({ data, color, label }) => {
       let xxKey = 'x';
       let xxScale = xScale;
-      if (x2Scale && data.length > 0 && ok(data.x2)) {
-        xxKey = 'x2';
-        xxScale = x2Scale;
+      if (x2Scale && data.length > 0) {
+        if (ok(data[0].x2)) {
+          xxKey = 'x2';
+          xxScale = x2Scale;
+        } else if (!xScale) {
+          throw new Error('只使用了x2坐标，但数据中没有x2值');
+        }
       }
-      const yyKey = y2Scale && data.length > 0 && ok(data[0].y2) ? 'y2' : 'y';
+      let yyKey = 'y';
+      if (y2Scale && data.length > 0) {
+        if (ok(data[0].y2)) {
+          yyKey = 'y2';
+        } else if (!yScale) {
+          throw new Error('只使用了y2坐标，但数据中没有y2值');
+        }
+      }
       let xval = xxScale.invert(x0);
       let yval = null;
+      // @ts-ignore
       const [xi0, xi1] = util.findNearIndex(
         +xval,
         data.map((d) => d[xxKey])
@@ -143,11 +141,22 @@ function tipCompute(prevRes, point, scaleAxis) {
     fData.forEach(({ data, color, label }) => {
       let yyKey = 'y';
       let yyScale = yScale;
-      if (y2Scale && data.length > 0 && ok(data.y2)) {
-        yyKey = 'y2';
-        yyScale = y2Scale;
+      if (y2Scale && data.length > 0) {
+        if (ok(data[0].y2)) {
+          yyKey = 'y2';
+          yyScale = y2Scale;
+        } else if (!yScale) {
+          throw new Error('只使用了y2坐标，但数据中没有y2值');
+        }
       }
-      const xxKey = x2Scale && data.length > 0 && ok(data[0].x2) ? 'x2' : 'x';
+      let xxKey = 'x';
+      if (x2Scale && data.length > 0) {
+        if (ok(data[0].x2)) {
+          xxKey = 'x2';
+        } else if (!xScale) {
+          throw new Error('只使用了x2坐标，但数据中没有x2值');
+        }
+      }
       let yval = yyScale.invert(y0);
       let xval = null;
       const [yi0, yi1] = util.findNearIndex(
@@ -216,7 +225,7 @@ function updateLine() {
     curve = d3.curveBasis; // 平滑曲线
   } else if (this.smooth < 1 && this.smooth > 0) {
     // @ts-ignore
-    curve = d3.curveBundle(this.smooth); // 平滑度为0.8曲线
+    curve = d3.curveBundle.beta(this.smooth); // 平滑度为0.8曲线
   }
   this.line$.curve(curve);
 }
