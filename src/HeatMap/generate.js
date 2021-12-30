@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-12-07 15:02:48
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-12-29 17:34:19
+ * @LastEditTime: 2021-12-30 12:03:48
  * @Description: 按需生成HeatMap构造器
  */
 
@@ -16,7 +16,7 @@ const iconSize = 18;
 
 const prefixSIFormat = d3.format('~s');
 
-const findValIndex = (val, arr) => {
+const searchValIndex = (val, arr) => {
   let n1 = 0;
   let n2 = arr.length;
   let c = 0;
@@ -65,7 +65,7 @@ const computeFactor = (val, val0, val1, bin0, bin1) => {
 };
 // 计算每个像素对应值的插值计算比例
 const getInterpFactor = (pixel, valPixs) => {
-  const index0 = findValIndex(pixel, valPixs);
+  const index0 = searchValIndex(pixel, valPixs);
   const index1 = index0 + 1;
   return computeFactor(pixel, valPixs[index0], valPixs[index1], index0, index1);
 };

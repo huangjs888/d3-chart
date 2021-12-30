@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-12-21 13:46:47
+ * @LastEditTime: 2021-12-30 12:01:59
  * @Description: 默认LineGraph构造器
  */
 
@@ -91,7 +91,7 @@ function tipCompute(prevRes, point, scaleAxis) {
           xxKey = 'x2';
           xxScale = x2Scale;
         } else if (!xScale) {
-          throw new Error('只使用了x2坐标，但数据中没有x2值');
+          throw new Error('scale只配置了x2坐标，但数据中没有x2值');
         }
       }
       let yyKey = 'y';
@@ -99,7 +99,7 @@ function tipCompute(prevRes, point, scaleAxis) {
         if (ok(data[0].y2)) {
           yyKey = 'y2';
         } else if (!yScale) {
-          throw new Error('只使用了y2坐标，但数据中没有y2值');
+          throw new Error('scale只配置了y2坐标，但数据中没有y2值');
         }
       }
       let xval = xxScale.invert(x0);
@@ -146,7 +146,7 @@ function tipCompute(prevRes, point, scaleAxis) {
           yyKey = 'y2';
           yyScale = y2Scale;
         } else if (!yScale) {
-          throw new Error('只使用了y2坐标，但数据中没有y2值');
+          throw new Error('scale只配置了y2坐标，但数据中没有y2值');
         }
       }
       let xxKey = 'x';
@@ -154,7 +154,7 @@ function tipCompute(prevRes, point, scaleAxis) {
         if (ok(data[0].x2)) {
           xxKey = 'x2';
         } else if (!xScale) {
-          throw new Error('只使用了x2坐标，但数据中没有x2值');
+          throw new Error('scale只配置了x2坐标，但数据中没有x2值');
         }
       }
       let yval = yyScale.invert(y0);
