@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-12-29 17:35:02
+ * @LastEditTime: 2022-01-25 10:56:17
  * @Description: 基础图表构造器
  */
 
@@ -803,8 +803,8 @@ function bindEvents() {
         const { cross } = this.tooptip;
         // @ts-ignore
         const zNode = this.zoomSelection$.node();
-        const { toElement } = e;
-        if (!toElement || (toElement.parentNode !== zNode && toElement.parentNode.parentNode !== zNode)) {
+        const { relatedTarget } = e;
+        if (!relatedTarget || (relatedTarget !== zNode && relatedTarget.parentNode !== zNode)) {
           if (cross.indexOf('x') !== -1) {
             // @ts-ignore
             this.zoomSelection$.select('.x-cross').style('display', 'none');
