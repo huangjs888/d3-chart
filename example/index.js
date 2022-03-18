@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-12-08 17:13:40
+ * @LastEditTime: 2022-03-17 17:35:35
  * @Description: ******
  */
 
@@ -107,6 +107,19 @@ heatMap.setEvent('dblclick', (e, data) => {
   });
   if (data.xSelect) {
     const { x, y, z } = data.xSelect;
+    const d1 = [];
+    const d2 = [];
+    // 因为z数组中可能存在empty元素，所以不能使用map或forEach
+    for (let i = 0; i < z.length; i += 1) {
+      d1.push({
+        y: z[i] || 0,
+        x: y[i],
+      });
+      d2.push({
+        y: (z[i] || 0) + 1,
+        x: y[i],
+      });
+    }
     lineGraph
       .setData({
         line: [
@@ -114,21 +127,13 @@ heatMap.setEvent('dblclick', (e, data) => {
             key: x,
             label: x,
             color: 'red',
-            data:
-              z.map((v, i) => ({
-                y: v,
-                x: y[i],
-              })) || [],
+            data: d1,
           },
           {
             key: x + 'o',
             label: x,
             color: 'green',
-            data:
-              z.map((v, i) => ({
-                y: v + 1,
-                x: y[i],
-              })) || [],
+            data: d2,
           },
         ],
       })
@@ -140,15 +145,39 @@ const heatData = { x: [], y: [], z: [] };
 
 data.forEach(({ time, step, value }, i) => {
   heatData.x[i] = +time;
-  value.forEach((val, j) => {
-    if (i === 0) {
-      heatData.y[j] = step * j;
+  // 加入x轴竖向无效记录（不渲染）1606700294000-1606700323000毫秒内
+  if (+time > 1606700294000 && +time < 1606700323000) {
+    // 大概是两条数据
+    // @ts-ignore
+    if (!heatData.x.invalid) {
+      // @ts-ignore
+      heatData.x.invalid = [];
     }
-    if (!heatData.z[j]) {
-      heatData.z[j] = [];
-    }
-    heatData.z[j][i] = +val;
-  });
+    // @ts-ignore
+    heatData.x.invalid.push(i);
+  } else {
+    value.forEach((val, j) => {
+      if (heatData.y.length < value.length) {
+        heatData.y[j] = step * j;
+        // 加入y轴横向无效记录（不渲染）1500-3000米内
+        if (step * j > 1500 && step * j < 3000) {
+          // @ts-ignore
+          if (!heatData.y.invalid) {
+            // @ts-ignore
+            heatData.y.invalid = [];
+          }
+          // @ts-ignore
+          heatData.y.invalid.push(j);
+        }
+      }
+      if (step * j <= 1500 || step * j >= 3000) {
+        if (!heatData.z[j]) {
+          heatData.z[j] = [];
+        }
+        heatData.z[j][i] = +val;
+      }
+    });
+  }
 });
 
 heatMap.setData({ heat: heatData }, true);
@@ -156,7 +185,14 @@ heatMap.setData({ heat: heatData }, true);
 const x0 = heatData.x[0];
 const zz = heatData.z;
 const yy = heatData.y;
-
+// 因为z数组中可能存在empty元素，所以不能使用map或forEach
+const d = [];
+for (let i = 0; i < zz.length; i += 1) {
+  d.push({
+    y: (zz[i] || [])[0] || 0,
+    x: yy[i],
+  });
+}
 lineGraph.setData(
   {
     line: [
@@ -164,11 +200,7 @@ lineGraph.setData(
         key: x0,
         label: x0,
         color: 'red',
-        data:
-          zz.map((y, i) => ({
-            x: yy[i],
-            y: y[0],
-          })) || [],
+        data: d,
       },
     ],
   },

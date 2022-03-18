@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-12-07 15:02:48
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-12-30 12:03:48
+ * @LastEditTime: 2022-03-17 17:29:12
  * @Description: 按需生成HeatMap构造器
  */
 
@@ -121,19 +121,28 @@ const matrixInterp = ({ w, h, d }, { x, y, z }, c) => {
   const xInterpArray = [];
   for (let j = y0; j < y1; j += 1) {
     const yInterp = getInterpFactor(j, yValPixs);
-    const val0 = z[yInterp.bin0];
-    const val1 = z[yInterp.bin1];
+    const val0 = z[yInterp.bin0] || [];
+    const val1 = z[yInterp.bin1] || [];
+    // 获取y轴(横向)范围内无效索引集合
+    const yInvalidIndex = y.invalid || [];
+    // 判断当前横向一整条像素的上bin0下bin1都是无效索引，则无效
+    const yInvalid = yInvalidIndex.findIndex((o) => o === yInterp.bin0 || o === yInterp.bin1) !== -1;
     for (let i = x0; i < x1; i += 1) {
-      let xInterp = xInterpArray[i];
-      if (!xInterp) {
-        xInterp = getInterpFactor(i, xValPixs);
-        xInterpArray[i] = xInterp;
-      }
-      const chasm = x.chasm || [];
-      const xbin = Math.max(xInterp.bin0, xInterp.bin1);
-      const noChasm = chasm.findIndex((o) => o === xbin) === -1;
-      const { r, g, b, opacity } = noChasm
-        ? c(
+      let rgba = { r: 0, g: 0, b: 0, opacity: 0 };
+      // 有效才计算颜色
+      if (!yInvalid) {
+        let xInterp = xInterpArray[i];
+        if (!xInterp) {
+          xInterp = getInterpFactor(i, xValPixs);
+          xInterpArray[i] = xInterp;
+        }
+        // 获取x轴(竖向)范围内无效索引集合
+        const xInvalidIndex = x.invalid || [];
+        // 判断当前像素点的左bin0右bin1都是无效索引，则无效
+        const xInvalid = xInvalidIndex.findIndex((o) => o === xInterp.bin0 || o === xInterp.bin1) !== -1;
+        // 有效才计算颜色
+        if (!xInvalid) {
+          rgba = c(
             matrixAverage(
               xInterp.factor,
               val0[xInterp.bin0],
@@ -142,12 +151,13 @@ const matrixInterp = ({ w, h, d }, { x, y, z }, c) => {
               val1[xInterp.bin0],
               val1[xInterp.bin1]
             )
-          )
-        : { r: 0, g: 0, b: 0, opacity: 0 };
-      pixels[index] = r;
-      pixels[index + 1] = g;
-      pixels[index + 2] = b;
-      pixels[index + 3] = opacity * 255; // 透明度0-1需要转换成0-255
+          );
+        }
+      }
+      pixels[index] = rgba.r;
+      pixels[index + 1] = rgba.g;
+      pixels[index + 2] = rgba.b;
+      pixels[index + 3] = rgba.opacity * 255; // 透明度0-1需要转换成0-255
       index += 4;
     }
   }
@@ -293,21 +303,21 @@ function tipCompute(prevRes, point, scaleAxis) {
       const yval1 = +data.y[yi1];
       if (xval0 === xval1 && yval0 === yval1) {
         // 正好移动到了xy交叉数据点上
-        zval = data.z[yi0][xi0];
+        zval = (data.z[yi0] || [])[xi0];
       } else if (average) {
         const xInterp = computeFactor(+xval, xval0, xval1, xi0, xi1);
         const yInterp = computeFactor(+yval, yval0, yval1, yi0, yi1);
-        const val00 = data.z[yInterp.bin0][xInterp.bin0];
-        const val01 = data.z[yInterp.bin0][xInterp.bin1];
-        const val10 = data.z[yInterp.bin1][xInterp.bin0];
-        const val11 = data.z[yInterp.bin1][xInterp.bin1];
+        const val00 = (data.z[yInterp.bin0] || [])[xInterp.bin0];
+        const val01 = (data.z[yInterp.bin0] || [])[xInterp.bin1];
+        const val10 = (data.z[yInterp.bin1] || [])[xInterp.bin0];
+        const val11 = (data.z[yInterp.bin1] || [])[xInterp.bin1];
         zval = matrixAverage(xInterp.factor, val00, val01, yInterp.factor, val10, val11);
       } else {
         const xi = Math.abs(xval - xval0) > Math.abs(xval - xval1) ? xi1 : xi0;
         const yi = Math.abs(yval - yval0) > Math.abs(yval - yval1) ? yi1 : yi0;
         xval = +data.x[xi];
         yval = +data.y[yi];
-        zval = data.z[yi][xi];
+        zval = (data.z[yi] || [])[xi];
         x0 = xScale(xval);
         y0 = yScale(yval);
       }
@@ -694,7 +704,10 @@ export default function generateHeatMap(superName) {
           if (!average) xi = [xi, xi];
           let xBin = 0;
           if (xi[0] !== xi[1]) xBin = (xval - heatData.x[xi[0]]) / (heatData.x[xi[1]] - heatData.x[xi[0]]);
-          zval = heatData.z.map((v) => xBin * (v[xi[1]] - v[xi[0]]) + v[xi[0]]);
+          zval = heatData.z.map((v) => {
+            const vv = v || [];
+            return xBin * ((vv[xi[1]] || 0) - (vv[xi[0]] || 0)) + (vv[xi[0]] || 0);
+          });
         }
         xSelect = { x: xval, y: heatData.y, z: zval };
       }
@@ -710,8 +723,8 @@ export default function generateHeatMap(superName) {
           if (!average) yi = [yi, yi];
           let yBin = 0;
           if (yi[0] !== yi[1]) yBin = (yval - heatData.y[yi[0]]) / (heatData.y[yi[1]] - heatData.y[yi[0]]);
-          zval = heatData.z[yi[0]].map((v0, i) => {
-            const v1 = heatData.z[yi[1]][i];
+          zval = (heatData.z[yi[0]] || []).map((v0, i) => {
+            const v1 = (heatData.z[yi[1]] || [])[i] || 0;
             return yBin * (v1 - v0) + v0;
           });
         }
