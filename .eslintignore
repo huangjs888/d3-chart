@@ -1,6 +1,6 @@
 stats.json
 node_modules/
 /coverage
-/example/build
+build/
 /lib
-/dist
+dist/

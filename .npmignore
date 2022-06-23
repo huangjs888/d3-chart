@@ -72,6 +72,7 @@ demos/assets/screenshots
 stats.json
 /coverage
 /example
+/docs
 .eslintrc.js
 _babel.config_.js
 .editorconfig

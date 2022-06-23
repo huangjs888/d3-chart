@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-10-15 16:12:44
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-12-29 17:37:18
+ * @LastEditTime: 2022-06-23 10:43:38
  * @Description: ******
  */
 
@@ -10,7 +10,7 @@ import 'jest-canvas-mock';
 import * as d3 from 'd3';
 import { BaseChart, HeatMap, HeatMapLine, LineGraph, mixin } from './src/index';
 import * as util from './src/util/index';
-import data from './example/data';
+import data from './docs/data';
 
 const heatData = { x: [], y: [], z: [] };
 data.forEach(({ time, step, value }, i) => {

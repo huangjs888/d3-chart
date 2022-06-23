@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2022-01-25 10:56:17
+ * @LastEditTime: 2022-03-25 16:08:40
  * @Description: 基础图表构造器
  */
 
@@ -384,20 +384,22 @@ function updateElement(size) {
   if (this.scale.x) {
     group.select('.xAxis').attr('transform', `translate(0,${zh})`);
     // @ts-ignore
-    group
-      .select('.xLabel')
-      // @ts-ignore
-      .attr('transform', `translate(${zw / 2} ${zh + padding[2] - iconSize + baselineDelt}) rotate(0)`);
+    if (this.scale.x.showRange || typeof this.scale.x.showRange === 'undefined') {
+      group
+        .select('.xLabel')
+        // @ts-ignore
+        .attr('transform', `translate(${zw / 2} ${zh + padding[2] - iconSize + baselineDelt}) rotate(0)`);
+    }
   }
   // @ts-ignore
-  if (this.scale.x2) {
+  if (this.scale.x2 && (this.scale.x2.showRange || typeof this.scale.x2.showRange === 'undefined')) {
     group
       .select('.x2Label')
       // @ts-ignore
       .attr('transform', `translate(${zw / 2} ${baselineDelt - padding[0]}) rotate(0)`);
   }
   // @ts-ignore
-  if (this.scale.y) {
+  if (this.scale.y && (this.scale.y.showRange || typeof this.scale.y.showRange === 'undefined')) {
     group
       .select('.yLabel')
       // @ts-ignore
@@ -407,10 +409,12 @@ function updateElement(size) {
   if (this.scale.y2) {
     group.select('.y2Axis').attr('transform', `translate(${zw},0)`);
     // @ts-ignore
-    group
-      .select('.y2Label')
-      // @ts-ignore
-      .attr('transform', `translate(${zw + padding[1] - iconSize + baselineDelt} ${zh / 2}) rotate(-90)`);
+    if (this.scale.y2.showRange || typeof this.scale.y2.showRange === 'undefined') {
+      group
+        .select('.y2Label')
+        // @ts-ignore
+        .attr('transform', `translate(${zw + padding[1] - iconSize + baselineDelt} ${zh / 2}) rotate(-90)`);
+    }
   }
   // @ts-ignore
   const svgDiv = this.rootSelection$
@@ -507,7 +511,10 @@ function createElement(container, size) {
     // @ts-ignore
     if (this.scale[key]) {
       groupSelection.append('g').attr('class', `${key}Axis`);
-      groupSelection.append('g').attr('class', `${key}Label`).attr('fill', 'currentColor').append('text');
+      // @ts-ignore
+      if (this.scale[key].showRange || typeof this.scale[key].showRange === 'undefined') {
+        groupSelection.append('g').attr('class', `${key}Label`).attr('fill', 'currentColor').append('text');
+      }
     }
   });
   groupSelection.append('g').attr('class', 'zAxis').attr('clip-path', `url(#${pathClipId})`);
