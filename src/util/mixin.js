@@ -9,6 +9,7 @@
 function defineProperties(target, source, exclude = []) {
   Object.getOwnPropertyNames(source).forEach((key) => {
     if (!exclude.find((exc) => key === exc)) {
+      // @ts-ignore
       Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
     }
   });

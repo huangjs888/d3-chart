@@ -352,6 +352,7 @@ class LineGraph extends BaseChart {
   }
 
   destroy() {
+    // @ts-ignore
     if (this.line$) this.line$ = null;
     if (this.filter$) this.filter$ = [];
     super.destroy();

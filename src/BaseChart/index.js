@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2022-03-25 16:08:40
+ * @LastEditTime: 2022-06-23 11:12:31
  * @Description: 基础图表构造器
  */
 
@@ -627,6 +627,7 @@ function createElement(container, size) {
           {
             sourceEvent: e || null,
             target: this.rootSelection$,
+            // @ts-ignore
             transform: [d3.zoomTransform(this.zoomSelection$.node()), ...this.zoomSelection$.datum()],
             scaleAxis: getScaleAxis.call(this),
             type: 'resize',
@@ -1319,8 +1320,10 @@ class BaseChart {
     tempCanvas.width = width;
     tempCanvas.height = height;
     const tempCxt = tempCanvas.getContext('2d');
+    // @ts-ignore
     tempCxt.clearRect(0, 0, width, height);
     if (content) {
+      // @ts-ignore
       tempCxt.drawImage(content.image, content.x, content.y);
     }
     const tempImage = new Image();
@@ -1334,6 +1337,7 @@ class BaseChart {
     )}`;
     const ext = this.download.ext || 'png';
     tempImage.onload = () => {
+      // @ts-ignore
       tempCxt.drawImage(tempImage, 0, 0);
       const a = document.createElement('a');
       a.download = `${name || 'basechart'}.${ext}`;

@@ -295,6 +295,7 @@ function tipCompute(prevRes, point, scaleAxis) {
     let zval = 0;
     // @ts-ignore
     const [xi0, xi1] = util.findNearIndex(+xval, data.x);
+    // @ts-ignore
     const [yi0, yi1] = util.findNearIndex(+yval, data.y);
     if (xi0 >= 0 && xi1 >= 0 && yi0 >= 0 && yi1 >= 0) {
       const xval0 = +data.x[xi0];
@@ -372,6 +373,7 @@ function updateScale() {
     range = range || ['#000', '#fff'];
     domain = domain || [0, 1];
     this.zScale$
+      // @ts-ignore
       .range(range.map((c) => d3.color(c).copy({ opacity })))
       .domain(domain)
       .clamp(true); // 设置true可以卡住所给不在domain中的参数生成的数据仍然在range范围内
@@ -817,8 +819,10 @@ export default function generateHeatMap(superName) {
     destroy() {
       if (this.debounceDrawend$) {
         this.debounceDrawend$.cancel();
+        // @ts-ignore
         this.debounceDrawend$ = null;
       }
+      // @ts-ignore
       if (this.zScale$) this.zScale$ = null;
       // @ts-ignore
       if (this.tempCanvas$) this.tempCanvas$ = {};

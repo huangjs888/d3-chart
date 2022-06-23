@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-10-21 16:11:29
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-10-27 13:02:31
+ * @LastEditTime: 2022-06-23 11:25:47
  * @Description: ******
  */
 
@@ -39,7 +39,7 @@ module.exports = (env, argv) => {
     },
     output: {
       filename: devMode ? '[name].js' : '[name].[contenthash:8].js',
-      path: resolve(__dirname, './build/'),
+      path: resolve(__dirname, '../docs/'),
       clean: true,
     },
     module: {

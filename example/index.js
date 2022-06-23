@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2022-03-25 16:10:30
+ * @LastEditTime: 2022-06-23 11:25:57
  * @Description: ******
  */
 
@@ -145,6 +145,7 @@ heatMap.setEvent('dblclick', (e, data) => {
 const heatData = { x: [], y: [], z: [] };
 
 data.forEach(({ time, step, value }, i) => {
+  // @ts-ignore
   heatData.x[i] = +time;
   // 加入x轴竖向无效记录（不渲染）1606700294000-1606700323000毫秒内
   if (+time > 1606700294000 && +time < 1606700323000) {
@@ -159,6 +160,7 @@ data.forEach(({ time, step, value }, i) => {
   } else {
     value.forEach((val, j) => {
       if (heatData.y.length < value.length) {
+        // @ts-ignore
         heatData.y[j] = step * j;
         // 加入y轴横向无效记录（不渲染）1500-3000米内
         if (step * j > 1500 && step * j < 3000) {
@@ -173,8 +175,10 @@ data.forEach(({ time, step, value }, i) => {
       }
       if (step * j <= 1500 || step * j >= 3000) {
         if (!heatData.z[j]) {
+          // @ts-ignore
           heatData.z[j] = [];
         }
+        // @ts-ignore
         heatData.z[j][i] = +val;
       }
     });

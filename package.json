@@ -15,7 +15,7 @@
     "default": "./lib/index.js"
   },
   "scripts": {
-    "start": "npm run lint && npm run test && npm run lib && npm run dist && npm run docs:build && npm run docs:start",
+    "start": "npm run lint && npm run test && npm run lib && npm run dist && npm run example:build && npm run example:start",
     "clean:lib": "rimraf lib",
     "clean:dist": "rimraf dist",
     "clean:coverage": "rimraf coverage",
@@ -24,9 +24,9 @@
     "test": "npm run clean:coverage && jest ./test.js",
     "lib": "npm run clean:lib && babel ./src --out-dir ./lib --source-maps",
     "dist": "npm run clean:dist && webpack --config webpack.config.js --mode production",
-    "docs:build": "webpack --mode production --config ./docs/webpack.config.js",
-    "docs:develop": "webpack-dev-server  --mode development --config ./docs/webpack.config.js",
-    "docs:start": "webpack serve  --mode development --config ./docs/webpack.config.js",
+    "example:build": "webpack --mode production --config ./example/webpack.config.js",
+    "example:develop": "webpack-dev-server  --mode development --config ./example/webpack.config.js",
+    "example:start": "webpack serve  --mode development --config ./example/webpack.config.js",
     "analyz": "npm run clean:stats && webpack --profile --json > stats.json && webpack-bundle-analyzer ./stats.json"
   },
   "repository": {
