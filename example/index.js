@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2022-06-23 11:25:57
+ * @LastEditTime: 2022-07-05 11:27:13
  * @Description: ******
  */
 
@@ -45,7 +45,7 @@ const heatMap = new HeatMap({
     y: {
       type: 'linear',
       label: '距离',
-      showRange: false,
+      // showRange: false,
       unit: 'm',
     },
     y2: {

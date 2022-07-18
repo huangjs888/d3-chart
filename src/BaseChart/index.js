@@ -1,8 +1,9 @@
+// @ts-nocheck
 /*
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2022-06-23 11:12:31
+ * @LastEditTime: 2022-07-05 11:29:27
  * @Description: 基础图表构造器
  */
 
@@ -119,7 +120,6 @@ const computeSize = (element, { width, height, padding, rWidth, rHeight }) => {
       parseInt(style.paddingTop, 10) -
       parseInt(style.paddingBottom, 10);
   }
-  // @ts-ignore
   let [top, right, bottom, left] = [];
   const pad = Array.isArray(padding) ? padding : [];
   let [pad0, pad1, pad2, pad3] = pad;
@@ -128,7 +128,6 @@ const computeSize = (element, { width, height, padding, rWidth, rHeight }) => {
   pad2 = !util.isNumber(pad2) || pad2 < 0 ? 0 : pad2;
   pad3 = !util.isNumber(pad3) || pad3 < 0 ? 0 : pad3;
   if (!pad.length) {
-    // @ts-ignore
     top = 0;
     right = top;
     bottom = top;
@@ -219,9 +218,7 @@ function updateScale() {
 function createScale() {
   const axisScale = {};
   axisType.forEach((key) => {
-    // @ts-ignore
     if (this.scale[key]) {
-      // @ts-ignore
       const { type = 'linear', ticks = 5, tickSize, format } = this.scale[key];
       const scale = scaleType[type]();
       let axis = null;
@@ -242,10 +239,8 @@ function createScale() {
       }
       const defaultFormat = getDefaultFormat(type);
       if (!format) {
-        // @ts-ignore
         this.scale[key].format = defaultFormat;
       }
-      // @ts-ignore
       axis = axis.tickFormat(format || ((val) => defaultFormat(val, true)));
       axisScale[key] = { scale, axis };
     }
@@ -268,7 +263,6 @@ function createScale() {
 function updateZoom() {
   const viewExtent = [
     [0, 0],
-    // @ts-ignore
     [this.width$, this.height$],
   ];
   let scaleExtent = [
@@ -279,15 +273,12 @@ function updateZoom() {
     [0, 0],
     [0, 0],
   ];
-  // @ts-ignore
   const { x: xzoom, y: yzoom } = this.zoom;
   if (xzoom || yzoom) {
     const [xdomain, ydomain] = [xzoom, yzoom].map((zoom, i) => {
       const key = zoom.domain || (i === 0 ? 'x' : 'y');
       let domain = [0, 1];
-      // @ts-ignore
       if (this.scale[key]) {
-        // @ts-ignore
         domain = this.scale[key].domain || this.dataDomains$[key] || [0, 1];
       }
       return domain;
@@ -306,9 +297,7 @@ function updateZoom() {
       yDomainEx / 10,
       yDomainEx * 10,
     ];
-    // @ts-ignore
     const xRate = this.width$ / xDomainEx;
-    // @ts-ignore
     const yRate = this.height$ / yDomainEx;
     scaleExtent = [
       [xDomainEx / xMaxPrecision || 1, yDomainEx / yMaxPrecision || 1],
@@ -325,7 +314,6 @@ function updateZoom() {
       ],
     ];
   }
-  // @ts-ignore
   this.zoomer$
     .extent(viewExtent)
     .scaleExtent([(scaleExtent[0][0] * scaleExtent[0][1]) ** 2, (scaleExtent[1][0] * scaleExtent[1][1]) ** 2])
@@ -335,141 +323,97 @@ function updateZoom() {
 function createZoom() {
   this.zoomExtent$ = null;
   updateZoom.call(this);
-  this.transform$ = (axis, tf, deltK, point, point0) => {
+  this.transform$ = (axis, tf, t, p, l) => {
     let transform = tf;
     if (this.zoomExtent$) {
       const { viewExtent, translateExtent, scaleExtent } = this.zoomExtent$;
       const tk = Math.max(
         axis === 'x' ? scaleExtent[0][0] : scaleExtent[0][1],
-        Math.min(axis === 'x' ? scaleExtent[1][0] : scaleExtent[1][1], transform.k * deltK)
+        Math.min(axis === 'x' ? scaleExtent[1][0] : scaleExtent[1][1], transform.k * t)
       );
-      const tx = point[0] - tk * point0[0];
-      const ty = point[1] - tk * point0[1];
+      const tx = p[0] - tk * l[0];
+      const ty = p[1] - tk * l[1];
       if (tk !== transform.k || tx !== transform.x || ty !== transform.y) {
-        transform = d3.zoomIdentity.translate(tx, ty).scale(tk);
-        const dx0 = transform.invertX(viewExtent[0][0]) - translateExtent[0][0];
-        const dx1 = transform.invertX(viewExtent[1][0]) - translateExtent[1][0];
-        const dy0 = transform.invertY(viewExtent[0][1]) - translateExtent[0][1];
-        const dy1 = transform.invertY(viewExtent[1][1]) - translateExtent[1][1];
-        transform = transform.translate(
-          dx1 > dx0 ? (dx0 + dx1) / 2 : Math.min(0, dx0) || Math.max(0, dx1),
-          dy1 > dy0 ? (dy0 + dy1) / 2 : Math.min(0, dy0) || Math.max(0, dy1)
-        );
+        transform = this.zoomer$.constrain()(d3.zoomIdentity.translate(tx, ty).scale(tk), viewExtent, translateExtent);
       }
     }
     return transform;
   };
 }
 function updateElement(size) {
-  // @ts-ignore
   const { width, height, padding, rWidth, rHeight } = computeSize(this.rootSelection$.node(), size);
-  // @ts-ignore
   let zw = width - rWidth - padding[3] - padding[1];
-  // @ts-ignore
   let zh = height - rHeight - padding[0] - padding[2];
   if (zw < 1) zw = 1;
   if (zh < 1) zh = 1;
-  // @ts-ignore
   const group = this.rootSelection$
     .select('svg')
     .attr('width', width)
     .attr('height', height)
     .select('g.group')
     .attr('transform', `translate(${padding[3]},${padding[0]})`);
-  // @ts-ignore
   this.rootSelection$.select('clipPath').select('rect').attr('width', zw).attr('height', zh);
-  // @ts-ignore
   const baselineDelt = this.fontSize + 2;
-  // @ts-ignore
   if (this.scale.x) {
     group.select('.xAxis').attr('transform', `translate(0,${zh})`);
-    // @ts-ignore
     if (this.scale.x.showRange || typeof this.scale.x.showRange === 'undefined') {
       group
         .select('.xLabel')
-        // @ts-ignore
         .attr('transform', `translate(${zw / 2} ${zh + padding[2] - iconSize + baselineDelt}) rotate(0)`);
     }
   }
-  // @ts-ignore
   if (this.scale.x2 && (this.scale.x2.showRange || typeof this.scale.x2.showRange === 'undefined')) {
-    group
-      .select('.x2Label')
-      // @ts-ignore
-      .attr('transform', `translate(${zw / 2} ${baselineDelt - padding[0]}) rotate(0)`);
+    group.select('.x2Label').attr('transform', `translate(${zw / 2} ${baselineDelt - padding[0]}) rotate(0)`);
   }
-  // @ts-ignore
   if (this.scale.y && (this.scale.y.showRange || typeof this.scale.y.showRange === 'undefined')) {
-    group
-      .select('.yLabel')
-      // @ts-ignore
-      .attr('transform', `translate(${baselineDelt - padding[3]} ${zh / 2}) rotate(-90)`);
+    group.select('.yLabel').attr('transform', `translate(${baselineDelt - padding[3]} ${zh / 2}) rotate(-90)`);
   }
-  // @ts-ignore
   if (this.scale.y2) {
     group.select('.y2Axis').attr('transform', `translate(${zw},0)`);
-    // @ts-ignore
     if (this.scale.y2.showRange || typeof this.scale.y2.showRange === 'undefined') {
       group
         .select('.y2Label')
-        // @ts-ignore
         .attr('transform', `translate(${zw + padding[1] - iconSize + baselineDelt} ${zh / 2}) rotate(-90)`);
     }
   }
-  // @ts-ignore
   const svgDiv = this.rootSelection$
     .select('div.actions')
     .style('width', `${zw}px`)
     .style('height', `${zh}px`)
     .style('top', `${padding[0]}px`)
     .style('left', `${padding[3]}px`);
-  // @ts-ignore
   if (this.zoom.x) {
     svgDiv
       .select('.xlock')
-      // @ts-ignore
       .style('top', `${this.scale.x ? zh + padding[2] - iconSize : -padding[0]}px`)
-      // @ts-ignore
       .style('left', `${this.scale.y ? zw - iconSize / 2 : -iconSize / 2}px`);
   }
-  // @ts-ignore
   if (this.zoom.y) {
     svgDiv
       .select('.ylock')
-      // @ts-ignore
       .style('top', `${this.scale.x ? -iconSize / 2 : zh - iconSize / 2}px`)
-      // @ts-ignore
       .style('left', `${this.scale.y ? -padding[3] : zw + padding[1] - iconSize}px`);
   }
   let offset = 5;
-  // @ts-ignore
   if (this.zoom.x || this.zoom.y) {
     svgDiv
       .select('.reset')
-      // @ts-ignore
       .style('top', `${this.scale.x ? -padding[0] : zh + padding[2] - iconSize}px`)
-      // @ts-ignore
       .style('left', `${this.scale.y ? zw - offset - iconSize : offset}px`);
     offset += 23;
   }
-  // @ts-ignore
   if (this.download) {
     svgDiv
       .select('.download')
-      // @ts-ignore
       .style('top', `${this.scale.x ? -padding[0] : zh + padding[2] - iconSize}px`)
-      // @ts-ignore
       .style('left', `${this.scale.y ? zw - offset - iconSize : offset}px`);
     offset += 23;
   }
   group
     .select('.zLabel')
-    // @ts-ignore
     .attr(
       'transform',
-      // @ts-ignore
       `translate(${this.scale.y ? zw - offset : offset} ${
-        // @ts-ignore
         (this.scale.x ? -padding[0] : zh + padding[2] - iconSize) + baselineDelt
       })`
     );
@@ -497,7 +441,6 @@ function createElement(container, size) {
     .attr('height', 1) // 清除默认宽高
     .attr('fill', 'none')
     .attr('text-anchor', 'middle')
-    // @ts-ignore
     .attr('font-size', this.fontSize)
     .attr('stroke', 'none')
     .attr('stroke-width', 1)
@@ -508,10 +451,8 @@ function createElement(container, size) {
   svgSelection.append('defs').append('svg:clipPath').attr('id', pathClipId).append('rect');
   const groupSelection = svgSelection.append('g').attr('class', 'group');
   axisType.forEach((key) => {
-    // @ts-ignore
     if (this.scale[key]) {
       groupSelection.append('g').attr('class', `${key}Axis`);
-      // @ts-ignore
       if (this.scale[key].showRange || typeof this.scale[key].showRange === 'undefined') {
         groupSelection.append('g').attr('class', `${key}Label`).attr('fill', 'currentColor').append('text');
       }
@@ -536,22 +477,17 @@ function createElement(container, size) {
     .style('top', 0)
     .style('left', 0);
   const actions = [];
-  // @ts-ignore
   if (this.zoom) {
-    // @ts-ignore
     if (this.zoom.x) {
       actions.push(actionButtons.xlock);
     }
-    // @ts-ignore
     if (this.zoom.y) {
       actions.push(actionButtons.ylock);
     }
-    // @ts-ignore
     if (this.zoom.x || this.zoom.y) {
       actions.push(actionButtons.reset);
     }
   }
-  // @ts-ignore
   if (this.download) {
     actions.push(actionButtons.download);
   }
@@ -572,9 +508,7 @@ function createElement(container, size) {
       .append('path')
       .attr('d', action.path);
   });
-  // @ts-ignore
   if (this.tooptip) {
-    // @ts-ignore
     const { cross } = this.tooptip;
     zoomSelection
       .append('div')
@@ -584,7 +518,6 @@ function createElement(container, size) {
       .style('border-radius', '8px')
       .style('transition', 'none')
       .style('padding', '10px 14px')
-      // @ts-ignore
       .style('font-size', `${this.fontSize}px`)
       .style('line-height', '22px')
       .style('position', 'absolute')
@@ -611,33 +544,25 @@ function createElement(container, size) {
   if (!(util.isNumber(size.width) && size.width > 1 && util.isNumber(size.height) && size.height > 1)) {
     const resize = util.debounce(
       (e) => {
-        // @ts-ignore
         if (this.destroyed) return;
         updateElement.call(this, size);
         updateScale.call(this);
         updateZoom.call(this);
-        // @ts-ignore
         if (this.rendered) {
-          // @ts-ignore
           this.reset();
         }
-        // @ts-ignore
         this.resize$.call(
           null,
           {
             sourceEvent: e || null,
             target: this.rootSelection$,
-            // @ts-ignore
             transform: [d3.zoomTransform(this.zoomSelection$.node()), ...this.zoomSelection$.datum()],
             scaleAxis: getScaleAxis.call(this),
             type: 'resize',
           },
           {
-            // @ts-ignore
             width: this.width$,
-            // @ts-ignore
             height: this.height$,
-            // @ts-ignore
             padding: this.padding,
           }
         );
@@ -652,356 +577,299 @@ function createElement(container, size) {
   }
 }
 function bindEvents() {
-  let pointX0 = [0, 0];
-  let pointY0 = [0, 0];
-  let point0 = [0, 0];
-  let transform0 = d3.zoomIdentity;
-  // @ts-ignore
-  this.zoomSelection$.datum([d3.zoomIdentity, d3.zoomIdentity]);
-  // @ts-ignore
-  this.zoomer$
-    .on('start', (e) => {
-      // @ts-ignore
-      if (this.destroyed || !this.rendered) return;
-      // @ts-ignore
-      const [xTransform, yTransform] = this.zoomSelection$.datum();
-      const { transform, sourceEvent } = e;
-      if (sourceEvent.type !== 'call') {
-        if (!this.xCanZoom$ && !this.yCanZoom$) return;
-        // @ts-ignore
-        const point = d3.pointer(e, this.zoomSelection$.node());
-        if (this.xCanZoom$) {
-          pointX0 = xTransform.invert(point);
-        }
-        if (this.yCanZoom$) {
-          pointY0 = yTransform.invert(point);
-        }
-        point0 = point;
-        transform0 = transform;
-      }
-      // @ts-ignore
-      this.zoomstart$.call(null, {
-        ...e,
-        transform: [transform, xTransform, yTransform],
-        scaleAxis: getScaleAxis.call(this),
-      });
-    })
-    .on('zoom', (e) => {
-      // @ts-ignore
-      if (this.destroyed || !this.rendered) return;
-      // @ts-ignore
-      let [xTransform, yTransform] = this.zoomSelection$.datum();
-      const { transform, sourceEvent } = e;
-      // sourceEvent存在表示事鼠标触发，如滚轮和移动
-      if (sourceEvent.type !== 'call') {
-        if (!this.xCanZoom$ && !this.yCanZoom$) return;
-        // @ts-ignore
-        const point = d3.pointer(e, this.zoomSelection$.node());
-        // @ts-ignore
-        if (sourceEvent.type === 'mousemove' && !util.isCanEmit(point0, point)) return;
-        const deltK = transform.k / transform0.k;
-        const changed = point[0] !== point0[0] || point[1] !== point0[1];
-        let p = point;
-        if (sourceEvent.type === 'wheel') {
-          // @ts-ignore
-          p = changed ? point : point0;
-        }
-        if (this.xCanZoom$) {
-          let px0 = pointX0;
-          if (sourceEvent.type === 'wheel') {
-            px0 = changed ? xTransform.invert(point) : pointX0;
-          }
-          // @ts-ignore
-          xTransform = this.transform$('x', xTransform, deltK, p, px0);
-        }
-        if (this.yCanZoom$) {
-          let py0 = pointY0;
-          if (sourceEvent.type === 'wheel') {
-            py0 = changed ? yTransform.invert(point) : pointY0;
-          }
-          // @ts-ignore
-          yTransform = this.transform$('y', yTransform, deltK, p, py0);
-        }
-        transform0 = transform;
-      } else if (sourceEvent.transform) {
-        // 如果存在xy缩放，则会有补间调用，万一补间一半，触发了滚轮或移动，则补间会停止，造成无法到达指定缩放位置，所以xy锁定的时候应该忽略补间
-        // e.transform和sourceEvent.transform原本是一样的，但是动画补间的每一次调用时e.transform会变化，直到最后一次才会和sourceEvent.transform一样
-        // sourceEvent.transform是不变的，是最终的指定的transform
-        let xtf = transform;
-        let ytf = transform;
-        if (Array.isArray(sourceEvent.transform)) {
-          xtf = sourceEvent.transform[1];
-          ytf = sourceEvent.transform[2];
+  let point = null;
+  let transform0 = null;
+  let longPress = 0;
+  const showTooptip = (point) => {
+    if (this.tooptip) {
+      const { cross, compute } = this.tooptip;
+      const crossX = cross.indexOf('x') !== -1;
+      const crossY = cross.indexOf('y') !== -1;
+      if (crossX || crossY) {
+        const [x0, y0] = point;
+        let { x0: x00, y0: y00, result } = compute([x0, y0], getScaleAxis.call(this));
+        x00 = x00 || x00 === 0 ? x00 : x0;
+        y00 = y00 || y00 === 0 ? y00 : y0;
+        let display = 'none';
+        if (typeof result !== 'function') {
+          result = util.noop;
         } else {
-          if (!this.xCanZoom$) xtf = sourceEvent.transform;
-          if (!this.yCanZoom$) ytf = sourceEvent.transform;
+          display = 'block';
         }
-        if (sourceEvent.zoomX) {
-          xTransform = xtf;
+        if (crossX) {
+          selection.select('.x-cross').style('left', `${x00}px`).style('display', display);
         }
-        if (sourceEvent.zoomY) {
-          yTransform = ytf;
+        if (crossY) {
+          selection.select('.y-cross').style('top', `${y00}px`).style('display', display);
         }
-      }
-      // @ts-ignore
-      this.zoomSelection$.datum([xTransform, yTransform]);
-      const scaleAxis = getScaleAxis.call(this);
-      Object.keys(scaleAxis).forEach((key) => {
-        const { axis, scale } = scaleAxis[key];
-        // @ts-ignore
-        this.rootSelection$.select(`.${key}Axis`).call(axis);
-        // @ts-ignore
-        this.rootSelection$.select(`.${key}Label`).call(scaleLable, [this.scale[key], scale.domain()]);
-      });
-      // @ts-ignore
-      this.zooming$.call(null, {
-        ...e,
-        transform: [transform, xTransform, yTransform],
-        scaleAxis,
-      });
-    })
-    .on('end', (e) => {
-      // @ts-ignore
-      if (this.destroyed || !this.rendered) return;
-      const { transform, sourceEvent } = e;
-      if (sourceEvent.type !== 'call') {
-        if (!this.xCanZoom$ && !this.yCanZoom$) return;
-        // @ts-ignore
-        const point = d3.pointer(e, this.zoomSelection$.node());
-        // @ts-ignore
-        if (sourceEvent.type === 'mousemove' && !util.isCanEmit(point0, point)) return;
-        pointX0 = [0, 0];
-        pointY0 = [0, 0];
-        point0 = [0, 0];
-        transform0 = d3.zoomIdentity;
-      }
-      // @ts-ignore
-      this.zoomend$.call(null, {
-        ...e,
-        // @ts-ignore
-        transform: [transform, ...this.zoomSelection$.datum()],
-        scaleAxis: getScaleAxis.call(this),
-      });
-    });
-
-  // @ts-ignore
-  this.zoomSelection$
-    // @ts-ignore
-    .call(this.zoomer$)
-    .on('mouseover', (e) => {
-      // @ts-ignore
-      if (this.destroyed) return;
-      // @ts-ignore
-      this.mouseover$.call(null, {
-        sourceEvent: e,
-        // @ts-ignore
-        target: this.zoomSelection$,
-        // @ts-ignore
-        transform: [d3.zoomTransform(this.zoomSelection$.node()), ...this.zoomSelection$.datum()],
-        scaleAxis: getScaleAxis.call(this),
-        type: 'mouseover',
-      });
-    })
-    .on('mouseout', (e) => {
-      // @ts-ignore
-      if (this.destroyed) return;
-      // @ts-ignore
-      if (this.tooptip) {
-        // @ts-ignore
-        const { cross } = this.tooptip;
-        // @ts-ignore
-        const zNode = this.zoomSelection$.node();
-        const { relatedTarget } = e;
-        if (!relatedTarget || (relatedTarget !== zNode && relatedTarget.parentNode !== zNode)) {
-          if (cross.indexOf('x') !== -1) {
-            // @ts-ignore
-            this.zoomSelection$.select('.x-cross').style('display', 'none');
+        const tooptip = selection.select('.tooptip');
+        tooptip.style('display', display).call(result);
+        if (display !== 'none') {
+          const width = tooptip.node().clientWidth;
+          const height = tooptip.node().clientHeight;
+          let left = x0 + 10;
+          let top = y0 - height - 10;
+          if (this.width$ - left < width) {
+            left = x0 - 10 - width;
           }
-          if (cross.indexOf('y') !== -1) {
-            // @ts-ignore
-            this.zoomSelection$.select('.y-cross').style('display', 'none');
-          }
-          // @ts-ignore
-          this.zoomSelection$.select('.tooptip').style('display', 'none');
+          left = left <= -60 ? -60 : left;
+          top = top <= -20 ? -20 : top;
+          tooptip.style('left', `${left}px`).style('top', `${top}px`);
         }
       }
-      // @ts-ignore
-      this.mouseout$.call(null, {
-        sourceEvent: e,
-        // @ts-ignore
-        target: this.zoomSelection$,
-        // @ts-ignore
-        transform: [d3.zoomTransform(this.zoomSelection$.node()), ...this.zoomSelection$.datum()],
-        scaleAxis: getScaleAxis.call(this),
-        type: 'mouseout',
-      });
-    })
-    .on('mousemove', (e) => {
-      // @ts-ignore
-      if (this.destroyed) return;
-      const scaleAxis = getScaleAxis.call(this);
-      // @ts-ignore
-      if (this.tooptip) {
-        // @ts-ignore
-        const { cross, compute } = this.tooptip;
-        const crossX = cross.indexOf('x') !== -1;
-        const crossY = cross.indexOf('y') !== -1;
-        if (crossX || crossY) {
-          const [x0, y0] = d3.pointer(e);
-          let { x0: x00, y0: y00, result } = compute([x0, y0], scaleAxis);
-          x00 = x00 || x00 === 0 ? x00 : x0;
-          y00 = y00 || y00 === 0 ? y00 : y0;
-          let display = 'none';
-          if (typeof result !== 'function') {
-            result = util.noop;
-          } else {
-            display = 'block';
-          }
-          if (crossX) {
-            // @ts-ignore
-            this.zoomSelection$.select('.x-cross').style('left', `${x00}px`).style('display', display);
-          }
-          if (crossY) {
-            // @ts-ignore
-            this.zoomSelection$.select('.y-cross').style('top', `${y00}px`).style('display', display);
-          }
-          // @ts-ignore
-          const tooptip = this.zoomSelection$.select('.tooptip');
-          tooptip.style('display', display).call(result);
-          if (display !== 'none') {
-            const width = tooptip.node().clientWidth;
-            const height = tooptip.node().clientHeight;
-            let left = x0 + 10;
-            let top = y0 - height - 10;
-            // @ts-ignore
-            if (this.width$ - left < width) {
-              left = x0 - 10 - width;
+    }
+  };
+  const hideTooptip = (target) => {
+    if (this.tooptip) {
+      const { cross } = this.tooptip;
+      const zNode = element;
+      if (!target || (target !== zNode && target.parentNode !== zNode)) {
+        if (cross.indexOf('x') !== -1) {
+          selection.select('.x-cross').style('display', 'none');
+        }
+        if (cross.indexOf('y') !== -1) {
+          selection.select('.y-cross').style('display', 'none');
+        }
+        selection.select('.tooptip').style('display', 'none');
+      }
+    }
+  };
+  const selection = this.zoomSelection$;
+  const element = selection
+    .call(
+      this.zoomer$
+        .on('start', ({ transform, sourceEvent, ...restEvent }, [xTransform, yTransform]) => {
+          if (this.destroyed || !this.rendered) return;
+          const { type, touches } = sourceEvent;
+          if (type !== 'call' && (this.xCanZoom$ || this.yCanZoom$)) {
+            let p = null;
+            if (touches) {
+              // 表示移动端触摸事件
+              point = [];
+              for (let i = 0, len = touches.length; i < len; i += 1) {
+                const touch = touches.item(i);
+                p = d3.pointer(touch, element);
+                p = [p, [xTransform.invert(p), yTransform.invert(p)], touch.identifier];
+                if (!point[0]) point[0] = p;
+                else if (!point[1] && point[0][2] !== p[2]) point[1] = p;
+              }
+            } else {
+              p = d3.pointer(sourceEvent, element);
+              p = [p, [xTransform.invert(p), yTransform.invert(p)]];
+              point = p;
             }
-            left = left <= -60 ? -60 : left;
-            top = top <= -20 ? -20 : top;
-            tooptip.style('left', `${left}px`).style('top', `${top}px`);
+            transform0 = transform;
           }
-        }
-      }
-      // @ts-ignore
-      this.mouseout$.call(null, {
-        sourceEvent: e,
-        // @ts-ignore
-        target: this.zoomSelection$,
-        // @ts-ignore
-        transform: [d3.zoomTransform(this.zoomSelection$.node()), ...this.zoomSelection$.datum()],
-        scaleAxis,
-        type: 'mousemove',
-      });
-    })
+          if (touches) {
+            longPress = setTimeout(() => {
+              showTooptip(d3.pointer(touches.item(0), element));
+              longPress = 0;
+            }, 500);
+          }
+          this.zoomstart$.call(null, {
+            ...restEvent,
+            sourceEvent,
+            scaleAxis: getScaleAxis.call(this),
+            transform: [transform, xTransform, yTransform],
+          });
+        })
+        .on('zoom', ({ transform, sourceEvent, ...restEvent }, [xTransform, yTransform]) => {
+          if (this.destroyed || !this.rendered) return;
+          let [newXTransform, newYTransform] = [xTransform, yTransform];
+          const { type, touches, transform: eventTransform } = sourceEvent;
+          if (type !== 'call') {
+            // 表示事用户主动触发，如滚轮和移动，触摸缩放
+            if (!this.xCanZoom$ && !this.yCanZoom$) return;
+            const t = transform.k / transform0.k;
+            let p = null;
+            let lx = null;
+            let ly = null;
+            if (touches) {
+              // 表示移动端触摸事件
+              let np = null;
+              let np1 = null;
+              for (let i = 0, len = touches.length; i < len; i += 1) {
+                const touch = touches.item(i);
+                const pt = d3.pointer(touch, element);
+                if (point[0] && point[0][2] === touch.identifier) np = pt;
+                else if (point[1] && point[1][2] === touch.identifier) np1 = pt;
+              }
+              if (point[0]) {
+                p = np || point[0][0];
+                lx = this.xCanZoom$ && point[0][1][0];
+                ly = this.yCanZoom$ && point[0][1][1];
+                if (point[1]) {
+                  const p1 = np1 || point[1][0];
+                  const [lx1, ly1] = point[1][1];
+                  p = [(p[0] + p1[0]) / 2, (p[1] + p1[1]) / 2];
+                  lx = this.xCanZoom$ && [(lx[0] + lx1[0]) / 2, (lx[1] + lx1[1]) / 2];
+                  ly = this.yCanZoom$ && [(ly[0] + ly1[0]) / 2, (ly[1] + ly1[1]) / 2];
+                }
+              }
+            } else {
+              p = d3.pointer(sourceEvent, element);
+              const changed = p[0] !== point[0][0] || p[1] !== point[0][1]; // zoom的时候点（鼠标）是否移动过
+              const wheel = type === 'wheel'; // 是否是滚轮
+              if (wheel && !changed) p = point[0];
+              lx = this.xCanZoom$ && (wheel && changed ? xTransform.invert(p) : point[1][0]);
+              ly = this.yCanZoom$ && (wheel && changed ? yTransform.invert(p) : point[1][1]);
+            }
+            if (p) {
+              if (lx) {
+                newXTransform = this.transform$('x', xTransform, t, p, lx);
+              }
+              if (ly) {
+                newYTransform = this.transform$('y', yTransform, t, p, ly);
+              }
+            }
+            transform0 = transform;
+          } else if (eventTransform) {
+            // 如果存在xy缩放，则会有补间调用，万一补间一半，触发了滚轮或移动，则补间会停止，造成无法到达指定缩放位置，所以xy锁定的时候应该忽略补间
+            // transform和eventTransform原本是一样的，但是动画补间的每一次调用时transform会变化，直到最后一次才会和eventTransform一样
+            // eventTransform是不变的，是最终的指定的变换结果
+            let xtf = transform;
+            let ytf = transform;
+            if (Array.isArray(eventTransform)) {
+              xtf = eventTransform[1];
+              ytf = eventTransform[2];
+            } else {
+              if (!this.xCanZoom$) xtf = eventTransform;
+              if (!this.yCanZoom$) ytf = eventTransform;
+            }
+            if (sourceEvent.zoomX) {
+              newXTransform = xtf;
+            }
+            if (sourceEvent.zoomY) {
+              newYTransform = ytf;
+            }
+          }
+          selection.datum([newXTransform, newYTransform]);
+          const scaleAxis = getScaleAxis.call(this);
+          Object.keys(scaleAxis).forEach((key) => {
+            const { axis, scale } = scaleAxis[key];
+            this.rootSelection$.select(`.${key}Axis`).call(axis);
+            this.rootSelection$.select(`.${key}Label`).call(scaleLable, [this.scale[key], scale.domain()]);
+          });
+          if (touches) {
+            if (longPress != 0) {
+              clearTimeout(longPress);
+              longPress = 0;
+            }
+            hideTooptip();
+          }
+          this.zooming$.call(null, {
+            ...restEvent,
+            sourceEvent,
+            transform: [transform, newXTransform, newYTransform],
+            scaleAxis,
+          });
+        })
+        .on('end', ({ transform, sourceEvent, ...restEvent }, [xTransform, yTransform]) => {
+          if (this.destroyed || !this.rendered) return;
+          if (sourceEvent.type !== 'call' && (this.xCanZoom$ || this.yCanZoom$)) {
+            point = null;
+            transform0 = null;
+          }
+          if (sourceEvent.touches) {
+            if (longPress != 0) {
+              clearTimeout(longPress);
+              longPress = 0;
+              hideTooptip();
+            }
+          }
+          this.zoomend$.call(null, {
+            ...restEvent,
+            sourceEvent,
+            transform: [transform, xTransform, yTransform],
+            scaleAxis: getScaleAxis.call(this),
+          });
+        })
+    )
     .on('click', (e) => {
-      // @ts-ignore
       if (this.destroyed) return;
-      // @ts-ignore
       this.click$.call(null, {
         sourceEvent: e,
-        // @ts-ignore
-        target: this.zoomSelection$,
-        // @ts-ignore
-        transform: [d3.zoomTransform(this.zoomSelection$.node()), ...this.zoomSelection$.datum()],
+        target: selection,
+        transform: [d3.zoomTransform(element), ...selection.datum()],
         scaleAxis: getScaleAxis.call(this),
         type: 'click',
       });
     })
-    .on('contextmenu', (e) => {
-      // @ts-ignore
+    .on('dblclick', (e) => {
       if (this.destroyed) return;
-      // @ts-ignore
+      this.dblclick$.call(null, {
+        sourceEvent: e,
+        target: selection,
+        transform: [d3.zoomTransform(element), ...selection.datum()],
+        scaleAxis: getScaleAxis.call(this),
+        type: 'dblclick',
+      });
+    })
+    .on('contextmenu', (e) => {
+      if (this.destroyed) return;
       this.contextmenu$.call(null, {
         sourceEvent: e,
-        // @ts-ignore
-        target: this.zoomSelection$,
-        // @ts-ignore
-        transform: [d3.zoomTransform(this.zoomSelection$.node()), ...this.zoomSelection$.datum()],
+        target: selection,
+        transform: [d3.zoomTransform(element), ...selection.datum()],
         scaleAxis: getScaleAxis.call(this),
         type: 'contextmenu',
       });
       e.preventDefault();
     })
-    .on('dblclick', (e) => {
-      // @ts-ignore
-      if (this.destroyed) return;
-      // @ts-ignore
-      this.dblclick$.call(null, {
-        sourceEvent: e,
-        // @ts-ignore
-        target: this.zoomSelection$,
-        // @ts-ignore
-        transform: [d3.zoomTransform(this.zoomSelection$.node()), ...this.zoomSelection$.datum()],
-        scaleAxis: getScaleAxis.call(this),
-        type: 'dblclick',
+    .datum([d3.zoomIdentity, d3.zoomIdentity])
+    .node();
+  if (!(window.navigator.maxTouchPoints || 'ontouchstart' in window)) {
+    selection
+      .on('mouseout', (e) => {
+        if (this.destroyed || !this.rendered) return;
+        hideTooptip(e.relatedTarget);
+      })
+      .on('mousemove', (e) => {
+        if (this.destroyed || !this.rendered) return;
+        showTooptip(d3.pointer(e));
       });
-    });
-  // @ts-ignore
+  }
   if (!this.zoom.doubleZoom) {
     // 取消双击放大
-    // @ts-ignore
-    this.zoomSelection$.on('dblclick.zoom', null);
+    selection.on('dblclick.zoom', null);
   }
-  // @ts-ignore
   if (this.zoom.x) {
-    // @ts-ignore
     const xlock = this.rootSelection$.select('.xlock');
     xlock.on('click', () => {
-      // @ts-ignore
       if (this.destroyed) return;
-      // @ts-ignore
       this.setCanZoom('x', !this.xCanZoom$);
-      // @ts-ignore
       this.canZoom$('x', this.xCanZoom$);
     });
   }
-  // @ts-ignore
   if (this.zoom.y) {
-    // @ts-ignore
     const ylock = this.rootSelection$.select('.ylock');
     ylock.on('click', () => {
-      // @ts-ignore
       if (this.destroyed) return;
-      // @ts-ignore
       this.setCanZoom('y', !this.yCanZoom$);
-      // @ts-ignore
       this.canZoom$('y', this.yCanZoom$);
     });
   }
-  // @ts-ignore
   if (this.zoom.x || this.zoom.y) {
-    // @ts-ignore
     this.rootSelection$.select('.reset').on('click', () => {
-      // @ts-ignore
       if (this.destroyed) return;
-      // @ts-ignore
       this.reset();
-      // @ts-ignore
       this.reset$();
     });
   }
-  // @ts-ignore
   if (this.download) {
-    // @ts-ignore
     this.rootSelection$.select('.download').on('click', () => {
-      // @ts-ignore
       if (this.destroyed) return;
-      // @ts-ignore
       if (this.download.action) {
-        // @ts-ignore
         this.download.action(() => {
-          // @ts-ignore
           this.downloadImage();
-          // @ts-ignore
         }, this.rootSelection$);
       } else {
-        // @ts-ignore
         this.downloadImage();
       }
     });
   }
 }
+
 class BaseChart {
   constructor(...params) {
     const {
@@ -1080,9 +948,6 @@ class BaseChart {
     this.click$ = util.noop;
     this.dblclick$ = util.noop;
     this.contextmenu$ = util.noop;
-    this.mouseover$ = util.noop;
-    this.mousemove$ = util.noop;
-    this.mouseout$ = util.noop;
     this.zoomstart$ = util.noop;
     this.zooming$ = util.noop;
     this.zoomend$ = util.noop;
@@ -1098,11 +963,9 @@ class BaseChart {
 
   render(tf, ax = 'xy', ta = true) {
     this.rendered = true;
-    // @ts-ignore
     const transform = (Array.isArray(tf) ? tf[0] : tf) || d3.zoomTransform(this.zoomSelection$.node());
     // 对this.zoomSelection$调用this.zoomer$.transform函数变换到指定的transform
     // 变换过程中用240ms及ease函数进行transition
-    // @ts-ignore
     (!ta ? this.zoomSelection$ : this.zoomSelection$.transition().duration(240).ease(d3.easeLinear)).call(
       this.zoomer$.transform,
       transform,
@@ -1122,7 +985,6 @@ class BaseChart {
   }
 
   getTransform() {
-    // @ts-ignore
     return [d3.zoomTransform(this.zoomSelection$.node()), ...this.zoomSelection$.datum()];
   }
 
@@ -1164,9 +1026,7 @@ class BaseChart {
     this[`${type}$`].call(null, {
       type,
       sourceEvent: sourceEvent || null,
-      // @ts-ignore
       target: target || this.zoomSelection$,
-      // @ts-ignore
       transform: transform || [d3.zoomTransform(this.zoomSelection$.node()), ...this.zoomSelection$.datum()],
       scaleAxis: scaleAxis || getScaleAxis.call(this),
     });
@@ -1183,7 +1043,6 @@ class BaseChart {
     // 根据data计算domain
     const needCompute = axisType.filter((key) => this.scale[key] && !this.scale[key].domain);
     if (needCompute.length > 0) {
-      // @ts-ignore
       this.dataDomains$ = computeDomain(this.data, needCompute) || {};
       updateScale.call(this);
       updateZoom.call(this);
@@ -1282,15 +1141,12 @@ class BaseChart {
     this.rendered = false;
     this.data = {};
     this.zoomer$.on('start', null).on('zoom', null).on('end', null);
-    // @ts-ignore
     this.zoomSelection$
-      .on('mouseover', null)
-      .on('mouseout', null)
-      .on('mousemove', null)
-      .on('dblclick.zoom', null)
       .on('click', null)
-      .on('contextmenu', null);
-    // @ts-ignore
+      .on('dblclick', null)
+      .on('contextmenu', null)
+      .on('mouseout', null)
+      .on('mousemove', null);
     if (this.unBindResize$) this.unBindResize$();
     this.rootSelection$.remove();
     this.rootSelection$ = null;
@@ -1301,12 +1157,9 @@ class BaseChart {
       const event = document.createEvent('Event');
       event.initEvent('resize', true, true);
       window.dispatchEvent(event);
-      // @ts-ignore
     } else if (document.createEventObject) {
-      // @ts-ignore
       const event = document.createEventObject();
       event.type = 'onresize';
-      // @ts-ignore
       window.fireEvent('onresize', event);
     }
     return this;
@@ -1320,10 +1173,8 @@ class BaseChart {
     tempCanvas.width = width;
     tempCanvas.height = height;
     const tempCxt = tempCanvas.getContext('2d');
-    // @ts-ignore
     tempCxt.clearRect(0, 0, width, height);
     if (content) {
-      // @ts-ignore
       tempCxt.drawImage(content.image, content.x, content.y);
     }
     const tempImage = new Image();
@@ -1337,7 +1188,6 @@ class BaseChart {
     )}`;
     const ext = this.download.ext || 'png';
     tempImage.onload = () => {
-      // @ts-ignore
       tempCxt.drawImage(tempImage, 0, 0);
       const a = document.createElement('a');
       a.download = `${name || 'basechart'}.${ext}`;

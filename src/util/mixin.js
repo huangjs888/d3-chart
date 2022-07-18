@@ -1,15 +1,15 @@
+// @ts-nocheck
 /*
  * @Author: Huangjs
  * @Date: 2021-10-11 11:38:34
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-12-08 09:25:05
+ * @LastEditTime: 2022-07-01 14:36:55
  * @Description: ******
  */
 
 function defineProperties(target, source, exclude = []) {
   Object.getOwnPropertyNames(source).forEach((key) => {
     if (!exclude.find((exc) => key === exc)) {
-      // @ts-ignore
       Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
     }
   });

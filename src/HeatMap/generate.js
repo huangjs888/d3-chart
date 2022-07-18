@@ -1,8 +1,9 @@
+// @ts-nocheck
 /*
  * @Author: Huangjs
  * @Date: 2021-12-07 15:02:48
  * @LastEditors: Huangjs
- * @LastEditTime: 2022-03-17 17:29:12
+ * @LastEditTime: 2022-07-05 11:31:41
  * @Description: 按需生成HeatMap构造器
  */
 
@@ -293,9 +294,7 @@ function tipCompute(prevRes, point, scaleAxis) {
     let xval = xScale.invert(x0);
     let yval = yScale.invert(y0);
     let zval = 0;
-    // @ts-ignore
     const [xi0, xi1] = util.findNearIndex(+xval, data.x);
-    // @ts-ignore
     const [yi0, yi1] = util.findNearIndex(+yval, data.y);
     if (xi0 >= 0 && xi1 >= 0 && yi0 >= 0 && yi1 >= 0) {
       const xval0 = +data.x[xi0];
@@ -373,7 +372,6 @@ function updateScale() {
     range = range || ['#000', '#fff'];
     domain = domain || [0, 1];
     this.zScale$
-      // @ts-ignore
       .range(range.map((c) => d3.color(c).copy({ opacity })))
       .domain(domain)
       .clamp(true); // 设置true可以卡住所给不在domain中的参数生成的数据仍然在range范围内
@@ -423,18 +421,15 @@ function doubleClick(point, { xScale, yScale }) {
   if (this.showHeat$) {
     const heatData = this.data.heat;
     let [x0, y0] = point;
-    // @ts-ignore
     let [xval, yval] = [];
     const lineMarkX = this.lineMark$[0];
     if (lineMarkX.node()) {
-      // @ts-ignore
       xval = Math.max(Math.min(+xScale.invert(x0), heatData.x[heatData.x.length - 1]), heatData.x[0]);
       x0 = xScale(xval);
       lineMarkX.style('left', `${x0}px`).style('display', 'block');
     }
     const lineMarkY = this.lineMark$[1];
     if (lineMarkY.node()) {
-      // @ts-ignore
       yval = Math.max(Math.min(+yScale.invert(y0), heatData.y[heatData.y.length - 1]), heatData.y[0]);
       y0 = yScale(yval);
       lineMarkY.style('top', `${y0}px`).style('display', 'block');
@@ -501,7 +496,6 @@ export default function generateHeatMap(superName) {
       const tempText = `${this.scale.z.label || ''}${this.scale.z.subLabel ? ` ( ${this.scale.z.subLabel} )` : ''}${
         this.scale.z.unit ? ` ( ${this.scale.z.unit} )` : ''
       }`;
-      // @ts-ignore
       const baselineDelt = this.fontSize + 2;
       const heatLabel = this.rootSelection$
         .select('g.group')
@@ -510,9 +504,7 @@ export default function generateHeatMap(superName) {
         .attr('fill', 'currentColor')
         .attr(
           'transform',
-          // @ts-ignore
           `translate(${this.scale.y ? 10 : this.width$ - 10},${
-            // @ts-ignore
             this.scale.x ? baselineDelt - this.padding[0] : this.height$ + this.padding[2] - iconSize + baselineDelt
           })`
         );
@@ -524,43 +516,33 @@ export default function generateHeatMap(superName) {
         const { select } = this.tooptip;
         select.split('').forEach((key) => {
           if (key) {
-            // @ts-ignore
             this.zoomSelection$
               .append('div')
               .attr('class', `${key}-linemark`)
               .style('background', '#fa9305')
               .style('display', 'none')
               .style('position', 'absolute')
-              // @ts-ignore
               .style('top', !this.scale.y ? 0 : this.height$ - 1)
-              // @ts-ignore
               .style('left', !this.scale.x ? this.width$ - 1 : 0)
               .style('width', key === 'x' ? '1px' : '100%')
               .style('height', key === 'x' ? '100%' : '1px');
           }
         });
       }
-      // @ts-ignore
       const lineMark = [this.zoomSelection$.select('.x-linemark'), this.zoomSelection$.select('.y-linemark')];
       this.lineMark$ = lineMark;
       const zCanvasParent = this.rootSelection$
         .insert('div', 'svg')
         .style('position', 'absolute')
-        // @ts-ignore
         .style('width', `${this.width$}px`)
-        // @ts-ignore
         .style('height', `${this.height$}px`)
-        // @ts-ignore
         .style('top', `${this.padding[0]}px`)
-        // @ts-ignore
         .style('left', `${this.padding[3]}px`);
       const zCanvas = zCanvasParent
         .append('canvas')
         .style('width', '100%')
         .style('height', '100%')
-        // @ts-ignore
         .attr('width', this.width$)
-        // @ts-ignore
         .attr('height', this.height$);
       if (colorBar) {
         const gradientId = util.guid('gradient');
@@ -580,13 +562,11 @@ export default function generateHeatMap(superName) {
           .attr('class', 'heatColorBar')
           .style('display', colorBar.show ? 'block' : 'none')
           .attr('fill', 'currentColor')
-          // @ts-ignore
           .attr('transform', `translate(${this.width$ + this.padding[1] + colorBar.left},0)`)
           .append('rect')
           .attr('x', 0)
           .attr('y', 0)
           .attr('width', colorBar.width)
-          // @ts-ignore
           .attr('height', this.height$)
           .attr('fill', `url(#${gradientId})`);
       }
@@ -604,6 +584,11 @@ export default function generateHeatMap(superName) {
         const xScale = (x || x2).scale;
         const yScale = (y || y2).scale;
         return doubleClick.call(this, e.sourceEvent ? d3.pointer(e.sourceEvent) : [0, 0], { xScale, yScale });
+      };
+      const click$$ = this.click$;
+      this.click$ = (e, ...args) => {
+        click$$.call(null, e, ...args);
+        lineMark.forEach((lm) => lm.node() && lm.style('display', 'none'));
       };
       const contextmenu$$ = this.contextmenu$;
       this.contextmenu$ = (e, ...args) => {
@@ -665,7 +650,7 @@ export default function generateHeatMap(superName) {
         if (this.destroyed) return;
         this.showHeat$ = !this.showHeat$;
         lineMark.forEach((lm) => lm.node() && lm.style('display', this.showHeat$ ? 'block' : 'none'));
-        heatLabel.attr('fill', !this.showHeat$ ? '#aaaa' : 'currentColor');
+        heatLabel.attr('fill', !this.showHeat$ ? '#aaa' : 'currentColor');
         if (this.rendered) {
           this.render();
         }
@@ -693,7 +678,6 @@ export default function generateHeatMap(superName) {
       const heatData = this.data.heat;
       let xSelect = null;
       let ySelect = null;
-      // @ts-ignore
       const lineMarkX = this.lineMark$[0];
       if (lineMarkX.node()) {
         const xval = !lineMark[0] && lineMark[0] !== 0 ? heatData.x[0] : lineMark[0];
@@ -702,7 +686,6 @@ export default function generateHeatMap(superName) {
         // xval在数据范围之内才可计算出zval
         if (xval >= heatData.x[0] && xval <= heatData.x[heatData.x.length - 1]) {
           let xi = util.findNearIndex(xval, heatData.x, !average);
-          // @ts-ignore
           if (!average) xi = [xi, xi];
           let xBin = 0;
           if (xi[0] !== xi[1]) xBin = (xval - heatData.x[xi[0]]) / (heatData.x[xi[1]] - heatData.x[xi[0]]);
@@ -721,7 +704,6 @@ export default function generateHeatMap(superName) {
         // yval在数据范围之内才可计算出zval
         if (yval >= heatData.y[0] && yval <= heatData.y[heatData.y.length - 1]) {
           let yi = util.findNearIndex(yval, heatData.y, !average);
-          // @ts-ignore
           if (!average) yi = [yi, yi];
           let yBin = 0;
           if (yi[0] !== yi[1]) yBin = (yval - heatData.y[yi[0]]) / (heatData.y[yi[1]] - heatData.y[yi[0]]);
@@ -819,12 +801,9 @@ export default function generateHeatMap(superName) {
     destroy() {
       if (this.debounceDrawend$) {
         this.debounceDrawend$.cancel();
-        // @ts-ignore
         this.debounceDrawend$ = null;
       }
-      // @ts-ignore
       if (this.zScale$) this.zScale$ = null;
-      // @ts-ignore
       if (this.tempCanvas$) this.tempCanvas$ = {};
       super.destroy();
       return this;

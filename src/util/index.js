@@ -1,8 +1,9 @@
+// @ts-nocheck
 /*
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-12-07 15:06:39
+ * @LastEditTime: 2022-07-01 14:36:41
  * @Description: ******
  */
 
@@ -62,7 +63,6 @@ const guid = (prefix) => {
   for (let i = 0; i < 5; i += 1) {
     n += Math.floor(Math.random() * 65535).toString(32);
   }
-  // @ts-ignore
   n += uniqueId(prefix).toString(32);
   return prefix ? `${prefix}-${n}` : n;
 };

@@ -1,8 +1,9 @@
+// @ts-nocheck
 /*
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2021-12-30 12:01:59
+ * @LastEditTime: 2022-07-01 14:36:16
  * @Description: 默认LineGraph构造器
  */
 
@@ -104,7 +105,6 @@ function tipCompute(prevRes, point, scaleAxis) {
       }
       let xval = xxScale.invert(x0);
       let yval = null;
-      // @ts-ignore
       const [xi0, xi1] = util.findNearIndex(
         +xval,
         data.map((d) => d[xxKey])
@@ -224,7 +224,6 @@ function updateLine() {
   if (this.smooth >= 1) {
     curve = d3.curveBasis; // 平滑曲线
   } else if (this.smooth < 1 && this.smooth > 0) {
-    // @ts-ignore
     curve = d3.curveBundle.beta(this.smooth); // 平滑度为0.8曲线
   }
   this.line$.curve(curve);
@@ -275,10 +274,8 @@ class LineGraph extends BaseChart {
         .selectAll('path')
         .attr('d', (d) =>
           this.line$
-            // @ts-ignore
-            .x(({ x, x2 }) => (typeof x === 'undefined' ? x2Scale(x2 || 0) : xScale(x || 0)))
-            // @ts-ignore
-            .y(({ y, y2 }) => (typeof y === 'undefined' ? y2Scale(y2 || 0) : yScale(y || 0)))(d.data)
+                  .x(({ x, x2 }) => (typeof x === 'undefined' ? x2Scale(x2 || 0) : xScale(x || 0)))
+                  .y(({ y, y2 }) => (typeof y === 'undefined' ? y2Scale(y2 || 0) : yScale(y || 0)))(d.data)
         );
     };
     this.rootSelection$.select('.zLabel').on('click', (e) => {
@@ -352,7 +349,6 @@ class LineGraph extends BaseChart {
   }
 
   destroy() {
-    // @ts-ignore
     if (this.line$) this.line$ = null;
     if (this.filter$) this.filter$ = [];
     super.destroy();
