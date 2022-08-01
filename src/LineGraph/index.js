@@ -3,7 +3,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2022-07-01 14:36:16
+ * @LastEditTime: 2022-08-01 15:04:37
  * @Description: 默认LineGraph构造器
  */
 
@@ -12,7 +12,7 @@ import BaseChart from '../BaseChart';
 import * as util from '../util';
 
 function lineLabel() {
-  const { onlyOneMerge } = this.tooptip;
+  const { onlyOneMerge } = this.tooltip;
   const pWidth = onlyOneMerge ? 0 : 20;
   const color = (v, c) => (this.filter$.findIndex((f) => f.key === v.key) !== -1 ? '#aaa' : c);
   const width = (v) => util.measureSvgText(v.label, this.fontSize) + pWidth;
@@ -73,7 +73,7 @@ function lineLabel() {
 function tipCompute(prevRes, point, scaleAxis) {
   const ok = (a) => a === 0 || !!a;
   const scaleOpt = this.scale;
-  const { cross, average, onlyOneMerge } = this.tooptip;
+  const { cross, average, onlyOneMerge } = this.tooltip;
   const crossX = cross.indexOf('x') !== -1;
   const crossY = cross.indexOf('y') !== -1;
   const xScale = scaleAxis.x && scaleAxis.x.scale;
@@ -204,14 +204,14 @@ function tipCompute(prevRes, point, scaleAxis) {
         .attr('style', 'white-space: nowrap;')
         .html((d, i) =>
           i === 0
-            ? `${d.label}：${d.format(d.value)}${d.unit}`
+            ? `${d.label ? `${d.label}: ` : ''}${d.format(d.value)}${d.unit || ''}`
             : `${
                 onlyOneMerge || !d.color
                   ? ''
                   : `<span style="background: ${d.color}; width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px;"></span>`
-              }<span>${d.label}</span>: <span style="display: inline-block; ${
+              }<span>${d.label ? `${d.label}: ` : ''}</span><span style="display: inline-block; ${
                 onlyOneMerge || !d.color ? '' : 'margin-left: 30px;'
-              }">${d.format(d.value)}${d.unit}</span>`
+              }">${d.format(d.value)}${d.unit || ''}</span>`
         );
     };
     return { x0, y0, data, result };
@@ -231,7 +231,7 @@ function updateLine() {
 
 class LineGraph extends BaseChart {
   constructor(...params) {
-    const { smooth, data, tooptip, ...restOptions } = params[0] || {};
+    const { smooth, data, tooltip, ...restOptions } = params[0] || {};
     const { line, ...restData } = data || {};
     super({
       ...restOptions,
@@ -242,15 +242,15 @@ class LineGraph extends BaseChart {
         })),
         ...restData,
       },
-      tooptip: !tooptip
+      tooltip: !tooltip
         ? false
         : {
             cross: 'x',
-            ...tooptip,
+            ...tooltip,
             compute: (res, ...args) => {
               let result = tipCompute.call(this, res, ...args);
-              if (typeof tooptip.compute === 'function') {
-                result = tooptip.compute.call(this, result, ...args);
+              if (typeof tooltip.compute === 'function') {
+                result = tooltip.compute.call(this, result, ...args);
               }
               return result;
             },
@@ -274,8 +274,8 @@ class LineGraph extends BaseChart {
         .selectAll('path')
         .attr('d', (d) =>
           this.line$
-                  .x(({ x, x2 }) => (typeof x === 'undefined' ? x2Scale(x2 || 0) : xScale(x || 0)))
-                  .y(({ y, y2 }) => (typeof y === 'undefined' ? y2Scale(y2 || 0) : yScale(y || 0)))(d.data)
+            .x(({ x, x2 }) => (typeof x === 'undefined' ? x2Scale(x2 || 0) : xScale(x || 0)))
+            .y(({ y, y2 }) => (typeof y === 'undefined' ? y2Scale(y2 || 0) : yScale(y || 0)))(d.data)
         );
     };
     this.rootSelection$.select('.zLabel').on('click', (e) => {
@@ -329,7 +329,7 @@ class LineGraph extends BaseChart {
           }
     );
     if (this.data.line.length !== 1) {
-      this.tooptip.onlyOneMerge = false;
+      this.tooltip.onlyOneMerge = false;
     }
     lineLabel.call(this);
     if (render) {

@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-10-25 17:29:05
  * @LastEditors: Huangjs
- * @LastEditTime: 2022-07-07 12:14:23
+ * @LastEditTime: 2022-07-29 16:27:46
  * @Description: ******
 -->
 <!DOCTYPE html>
@@ -40,7 +40,7 @@
       }
       .x-cross,
       .y-cross,
-      .tooptip {
+      .tooltip {
         background: rgba(0, 0, 0, 0.6);
         color: #fff;
       }
@@ -57,8 +57,8 @@
           container: '#heatmap',
           padding: [20, 62, 36, 62],
           download: 'png',
-          colorBar: { show: true, width: 22, left: 12, right: 50 },
-          tooptip: { cross: 'xy', select: 'xy' },
+          legend: { show: true, width: 22, left: 12, right: 50 },
+          tooltip: { cross: 'xy', select: 'xy' },
           zoom: {
             x: {
               domain: 'x',
@@ -103,7 +103,7 @@
           container: '#linegraph',
           padding: [20, 12, 40, 62],
           smooth: 1,
-          tooptip: { cross: 'x', onlyOneMerge: true },
+          tooltip: { cross: 'x', onlyOneMerge: true },
           zoom: {
             x: {
               domain: 'x',

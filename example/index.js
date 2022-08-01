@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2022-07-05 11:27:13
+ * @LastEditTime: 2022-07-29 16:32:11
  * @Description: ******
  */
 
@@ -20,8 +20,8 @@ const heatMap = new HeatMap({
   container: '#heatmap',
   padding: [20, 62, 36, 62],
   download: 'png',
-  colorBar: { show: true, width: 22, left: 12, right: 50 },
-  tooptip: { cross: 'xy', select: 'x' },
+  legend: { show: true, width: 22, left: 12, right: 50 },
+  tooltip: { cross: 'xy', select: 'x' },
   zoom: {
     x: {
       domain: 'x',
@@ -70,7 +70,7 @@ const lineGraph = new LineGraph({
   padding: [40, 60],
   smooth: 1,
   download: 'png',
-  tooptip: { cross: 'x', onlyOneMerge: false },
+  tooltip: { cross: 'x', onlyOneMerge: false },
   zoom: {
     x: {
       domain: 'x',

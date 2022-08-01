@@ -3,7 +3,7 @@
  * @Author: Huangjs
  * @Date: 2021-12-07 15:02:48
  * @LastEditors: Huangjs
- * @LastEditTime: 2022-07-05 11:31:41
+ * @LastEditTime: 2022-08-01 15:03:33
  * @Description: 按需生成HeatMap构造器
  */
 
@@ -285,7 +285,7 @@ function drawing(zContext, { xScale, yScale }) {
 function tipCompute(prevRes, point, scaleAxis) {
   const data = this.data.heat;
   const scaleOpt = this.scale;
-  const { cross, average } = this.tooptip;
+  const { cross, average } = this.tooltip;
   let [x0, y0] = point;
   const xyzValue = [];
   if (this.showHeat$ && cross === 'xy') {
@@ -349,14 +349,14 @@ function tipCompute(prevRes, point, scaleAxis) {
         .attr('style', 'white-space: nowrap;')
         .html((d, i) =>
           i === 0
-            ? `${d.label}：${d.format(d.value)}${d.unit}`
+            ? `${d.label ? `${d.label}: ` : ''}${d.format(d.value)}${d.unit || ''}`
             : `${
                 !d.color
                   ? ''
                   : `<span style="background: ${d.color}; width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px;"></span>`
-              }<span>${d.label}</span>: <span style="display: inline-block; ${
+              }<span>${d.label ? `${d.label}: ` : ''}</span><span style="display: inline-block; ${
                 !d.color ? '' : 'margin-left: 30px;'
-              }">${d.format(d.value)}${d.unit}</span>`
+              }">${d.format(d.value)}${d.unit || ''}</span>`
         );
     };
     return { x0, y0, data: ndata, result };
@@ -366,7 +366,7 @@ function tipCompute(prevRes, point, scaleAxis) {
 
 function updateScale() {
   if (this.scale.z) {
-    const zFormat = this.scale.z.format;
+    const zFormat = this.scale.z.format || ((v) => v);
     let [opacity, range, domain] = this.scale.z.domain || [];
     opacity = opacity || 1;
     range = range || ['#000', '#fff'];
@@ -375,20 +375,20 @@ function updateScale() {
       .range(range.map((c) => d3.color(c).copy({ opacity })))
       .domain(domain)
       .clamp(true); // 设置true可以卡住所给不在domain中的参数生成的数据仍然在range范围内
-    if (this.colorBar) {
+    if (this.legend) {
       const linearGradient = this.rootSelection$.select('linearGradient');
-      const heatColorBar = this.rootSelection$.select('.heatColorBar');
+      const heatLegend = this.rootSelection$.select('.heatLegend');
       const height = this.height$;
       const startDomain = domain[0];
       const deltDomain = domain[domain.length - 1] - startDomain;
-      const width = this.colorBar.width;
+      const width = this.legend.width;
       linearGradient
         .selectAll('stop')
         .data(domain)
         .join('stop')
         .attr('offset', (v) => `${(100 * (v - startDomain)) / deltDomain}%`)
         .attr('stop-color', (_, i) => range[i]);
-      heatColorBar
+      heatLegend
         .selectAll('g')
         .data(domain)
         .join(
@@ -444,16 +444,16 @@ function doubleClick(point, { xScale, yScale }) {
 export default function generateHeatMap(superName) {
   class HeatMap extends BaseChart {
     constructor(...params) {
-      const { data, tooptip, colorBar, scale, ...restOptions } = params[0] || {};
+      const { data, tooltip, legend, scale, ...restOptions } = params[0] || {};
       const { heat, ...restData } = data || {};
       let rWidth = restOptions.rWidth;
-      if (colorBar) {
-        colorBar.show = !!colorBar.show;
-        colorBar.left = util.isNumber(colorBar.left) ? colorBar.left : 0;
-        colorBar.width = util.isNumber(colorBar.width) ? colorBar.width : 0;
-        colorBar.right = util.isNumber(colorBar.right) ? colorBar.right : 0;
-        if (colorBar.show) {
-          rWidth = (util.isNumber(rWidth) ? rWidth : 0) + colorBar.left + colorBar.width + colorBar.right;
+      if (legend) {
+        legend.show = !!legend.show;
+        legend.left = util.isNumber(legend.left) ? legend.left : 0;
+        legend.width = util.isNumber(legend.width) ? legend.width : 0;
+        legend.right = util.isNumber(legend.right) ? legend.right : 0;
+        if (legend.show) {
+          rWidth = (util.isNumber(rWidth) ? rWidth : 0) + legend.left + legend.width + legend.right;
         }
       }
       super({
@@ -463,17 +463,17 @@ export default function generateHeatMap(superName) {
           heat: !heat ? { x: [], y: [], z: [] } : { x: heat.x || [], y: heat.y || [], z: heat.z || [] },
           ...restData,
         },
-        tooptip: !tooptip
+        tooltip: !tooltip
           ? false
           : {
               cross: 'xy',
               select: '',
               average: true,
-              ...tooptip,
+              ...tooltip,
               compute: (res, ...args) => {
                 let result = tipCompute.call(this, res, ...args);
-                if (typeof tooptip.compute === 'function') {
-                  result = tooptip.compute.call(this, result, ...args);
+                if (typeof tooltip.compute === 'function') {
+                  result = tooltip.compute.call(this, result, ...args);
                 }
                 return result;
               },
@@ -491,7 +491,7 @@ export default function generateHeatMap(superName) {
           ...scale,
         },
       });
-      this.colorBar = colorBar;
+      this.legend = legend;
       this.showHeat$ = true;
       const tempText = `${this.scale.z.label || ''}${this.scale.z.subLabel ? ` ( ${this.scale.z.subLabel} )` : ''}${
         this.scale.z.unit ? ` ( ${this.scale.z.unit} )` : ''
@@ -512,9 +512,9 @@ export default function generateHeatMap(superName) {
         .append('text')
         .attr('dx', ((this.scale.y ? 1 : -1) * util.measureSvgText(tempText, this.fontSize)) / 2)
         .text(tempText);
-      if (this.tooptip) {
-        const { select } = this.tooptip;
-        select.split('').forEach((key) => {
+      if (this.tooltip) {
+        const { select } = this.tooltip;
+        (select || '').split('').forEach((key) => {
           if (key) {
             this.zoomSelection$
               .append('div')
@@ -544,7 +544,7 @@ export default function generateHeatMap(superName) {
         .style('height', '100%')
         .attr('width', this.width$)
         .attr('height', this.height$);
-      if (colorBar) {
+      if (legend) {
         const gradientId = util.guid('gradient');
         this.rootSelection$
           .select('svg')
@@ -559,14 +559,14 @@ export default function generateHeatMap(superName) {
           .select('svg')
           .select('.group')
           .append('g')
-          .attr('class', 'heatColorBar')
-          .style('display', colorBar.show ? 'block' : 'none')
+          .attr('class', 'heatLegend')
+          .style('display', legend.show ? 'block' : 'none')
           .attr('fill', 'currentColor')
-          .attr('transform', `translate(${this.width$ + this.padding[1] + colorBar.left},0)`)
+          .attr('transform', `translate(${this.width$ + this.padding[1] + legend.left},0)`)
           .append('rect')
           .attr('x', 0)
           .attr('y', 0)
-          .attr('width', colorBar.width)
+          .attr('width', legend.width)
           .attr('height', this.height$)
           .attr('fill', `url(#${gradientId})`);
       }
@@ -632,18 +632,15 @@ export default function generateHeatMap(superName) {
             this.scale.x ? baselineDelt - padding[0] : height + padding[2] - iconSize + baselineDelt
           })`
         );
-        if (colorBar) {
-          const heatColorBar = this.rootSelection$.select('.heatColorBar');
-          heatColorBar.attr('transform', `translate(${width + padding[1] + colorBar.left},0)`);
-          heatColorBar.select('rect').attr('height', height);
-          const ticks = heatColorBar.selectAll('.tick');
+        if (legend) {
+          const heatLegend = this.rootSelection$.select('.heatLegend');
+          heatLegend.attr('transform', `translate(${width + padding[1] + legend.left},0)`);
+          heatLegend.select('rect').attr('height', height);
+          const ticks = heatLegend.selectAll('.tick');
           const domain = ticks.data();
           const startDomain = domain[0];
           const deltDomain = domain[domain.length - 1] - startDomain;
-          ticks.attr(
-            'transform',
-            (v) => `translate(${colorBar.width},${height * (1 - (v - startDomain) / deltDomain)})`
-          );
+          ticks.attr('transform', (v) => `translate(${legend.width},${height * (1 - (v - startDomain) / deltDomain)})`);
         }
       };
       heatLabel.on('click', () => {
@@ -674,7 +671,7 @@ export default function generateHeatMap(superName) {
 
     setLineMark(lm, cb) {
       const lineMark = lm || [];
-      const { average } = this.tooptip;
+      const { average } = this.tooltip;
       const heatData = this.data.heat;
       let xSelect = null;
       let ySelect = null;

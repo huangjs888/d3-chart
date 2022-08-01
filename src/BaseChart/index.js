@@ -3,7 +3,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2022-07-05 11:29:27
+ * @LastEditTime: 2022-07-27 17:05:20
  * @Description: 基础图表构造器
  */
 
@@ -508,11 +508,11 @@ function createElement(container, size) {
       .append('path')
       .attr('d', action.path);
   });
-  if (this.tooptip) {
-    const { cross } = this.tooptip;
+  if (this.tooltip) {
+    const { cross } = this.tooltip;
     zoomSelection
       .append('div')
-      .attr('class', 'tooptip')
+      .attr('class', 'tooltip')
       .style('display', 'none')
       .style('z-index', '999')
       .style('border-radius', '8px')
@@ -580,9 +580,9 @@ function bindEvents() {
   let point = null;
   let transform0 = null;
   let longPress = 0;
-  const showTooptip = (point) => {
-    if (this.tooptip) {
-      const { cross, compute } = this.tooptip;
+  const showTooltip = (point) => {
+    if (this.tooltip) {
+      const { cross, compute } = this.tooltip;
       const crossX = cross.indexOf('x') !== -1;
       const crossY = cross.indexOf('y') !== -1;
       if (crossX || crossY) {
@@ -602,11 +602,11 @@ function bindEvents() {
         if (crossY) {
           selection.select('.y-cross').style('top', `${y00}px`).style('display', display);
         }
-        const tooptip = selection.select('.tooptip');
-        tooptip.style('display', display).call(result);
+        const tooltip = selection.select('.tooltip');
+        tooltip.style('display', display).call(result);
         if (display !== 'none') {
-          const width = tooptip.node().clientWidth;
-          const height = tooptip.node().clientHeight;
+          const width = tooltip.node().clientWidth;
+          const height = tooltip.node().clientHeight;
           let left = x0 + 10;
           let top = y0 - height - 10;
           if (this.width$ - left < width) {
@@ -614,14 +614,14 @@ function bindEvents() {
           }
           left = left <= -60 ? -60 : left;
           top = top <= -20 ? -20 : top;
-          tooptip.style('left', `${left}px`).style('top', `${top}px`);
+          tooltip.style('left', `${left}px`).style('top', `${top}px`);
         }
       }
     }
   };
-  const hideTooptip = (target) => {
-    if (this.tooptip) {
-      const { cross } = this.tooptip;
+  const hideTooltip = (target) => {
+    if (this.tooltip) {
+      const { cross } = this.tooltip;
       const zNode = element;
       if (!target || (target !== zNode && target.parentNode !== zNode)) {
         if (cross.indexOf('x') !== -1) {
@@ -630,7 +630,7 @@ function bindEvents() {
         if (cross.indexOf('y') !== -1) {
           selection.select('.y-cross').style('display', 'none');
         }
-        selection.select('.tooptip').style('display', 'none');
+        selection.select('.tooltip').style('display', 'none');
       }
     }
   };
@@ -662,7 +662,7 @@ function bindEvents() {
           }
           if (touches) {
             longPress = setTimeout(() => {
-              showTooptip(d3.pointer(touches.item(0), element));
+              showTooltip(d3.pointer(touches.item(0), element));
               longPress = 0;
             }, 500);
           }
@@ -755,7 +755,7 @@ function bindEvents() {
               clearTimeout(longPress);
               longPress = 0;
             }
-            hideTooptip();
+            hideTooltip();
           }
           this.zooming$.call(null, {
             ...restEvent,
@@ -774,7 +774,7 @@ function bindEvents() {
             if (longPress != 0) {
               clearTimeout(longPress);
               longPress = 0;
-              hideTooptip();
+              hideTooltip();
             }
           }
           this.zoomend$.call(null, {
@@ -822,11 +822,11 @@ function bindEvents() {
     selection
       .on('mouseout', (e) => {
         if (this.destroyed || !this.rendered) return;
-        hideTooptip(e.relatedTarget);
+        hideTooltip(e.relatedTarget);
       })
       .on('mousemove', (e) => {
         if (this.destroyed || !this.rendered) return;
-        showTooptip(d3.pointer(e));
+        showTooltip(d3.pointer(e));
       });
   }
   if (!this.zoom.doubleZoom) {
@@ -881,7 +881,7 @@ class BaseChart {
       rHeight,
       fontSize = 12,
       download,
-      tooptip,
+      tooltip,
       zoom,
       scale,
       data,
@@ -895,15 +895,15 @@ class BaseChart {
     } else {
       this.download = download || false;
     }
-    this.tooptip = !tooptip
+    this.tooltip = !tooltip
       ? false
       : {
           cross: '',
-          ...tooptip,
+          ...tooltip,
           compute: (...args) => {
             let result = {};
-            if (typeof tooptip.compute === 'function') {
-              result = tooptip.compute.call(this, result, ...args);
+            if (typeof tooltip.compute === 'function') {
+              result = tooltip.compute.call(this, result, ...args);
             }
             return result;
           },

@@ -3,7 +3,7 @@
  * @Author: Huangjs
  * @Date: 2021-10-15 16:12:44
  * @LastEditors: Huangjs
- * @LastEditTime: 2022-07-01 14:37:33
+ * @LastEditTime: 2022-07-29 16:22:58
  * @Description: ******
  */
 
@@ -156,7 +156,7 @@ describe('HeatMap', () => {
     height: 300,
     padding: [20, 20, 36, 62],
     download: 'jpg',
-    tooptip: { select: 'xy' },
+    tooltip: { select: 'xy' },
     zoom: {
       x: {
         domain: 'x',
@@ -188,8 +188,8 @@ describe('HeatMap', () => {
   it('constructor', () => {
     expect(heatMap.download).toEqual({ ext: 'jpg' });
     expect(heatMap.data.heat.x).toEqual([]);
-    expect(heatMap.tooptip.cross).toBe('xy');
-    expect(heatMap.tooptip.select).toBe('xy');
+    expect(heatMap.tooltip.cross).toBe('xy');
+    expect(heatMap.tooltip.select).toBe('xy');
     expect(heatMap.zoom.doubleZoom).toBe(false);
     expect(heatMap.scale.x.type).toBe('time');
     expect(heatMap.fontSize).toBe(12);
@@ -263,7 +263,7 @@ describe('LineGraph', () => {
     height: 300,
     padding: [20, 12, 40, 62],
     smooth: 1,
-    tooptip: { cross: 'x', onlyOneMerge: true },
+    tooltip: { cross: 'x', onlyOneMerge: true },
     zoom: {
       x: {
         domain: 'x',
@@ -289,7 +289,7 @@ describe('LineGraph', () => {
   it('constructor', () => {
     expect(lineGraph.download).toBe(false);
     expect(lineGraph.data.line).toEqual([]);
-    expect(lineGraph.tooptip.cross).toBe('x');
+    expect(lineGraph.tooltip.cross).toBe('x');
     expect(lineGraph.zoom.doubleZoom).toBe(true);
     expect(lineGraph.scale.x.type).toBe('linear');
     expect(lineGraph.fontSize).toBe(12);
@@ -365,7 +365,7 @@ describe('HeatMapLine', () => {
     height: 300,
     padding: [20, 20, 36, 62],
     download: 'jpg',
-    tooptip: { select: 'xy' },
+    tooltip: { select: 'xy' },
     zoom: {
       x: {
         domain: 'x',
@@ -395,7 +395,7 @@ describe('HeatMapLine', () => {
   });
   it('constructor', () => {
     expect(heatMap2.data.heat.x).toEqual([]);
-    expect(heatMap2.tooptip.cross).toBe('xy');
+    expect(heatMap2.tooltip.cross).toBe('xy');
     expect(heatMap2.data.line).toEqual([]);
     expect(heatMap2).toBeInstanceOf(HeatMapLine);
     expect(heatMap2).toBeInstanceOf(LineGraph);
