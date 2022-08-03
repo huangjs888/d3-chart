@@ -3,7 +3,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2022-07-27 17:05:20
+ * @LastEditTime: 2022-08-03 16:27:59
  * @Description: 基础图表构造器
  */
 
@@ -640,7 +640,9 @@ function bindEvents() {
       this.zoomer$
         .on('start', ({ transform, sourceEvent, ...restEvent }, [xTransform, yTransform]) => {
           if (this.destroyed || !this.rendered) return;
-          const { type, touches } = sourceEvent;
+          const { type } = sourceEvent;
+          // 移动端双击放大的时候，因为是模拟的双击，所以event实际传过来的是touchend的事件对象
+          const touches = type === 'touchend' ? sourceEvent.changedTouches : sourceEvent.touches;
           if (type !== 'call' && (this.xCanZoom$ || this.yCanZoom$)) {
             let p = null;
             if (touches) {
@@ -676,7 +678,7 @@ function bindEvents() {
         .on('zoom', ({ transform, sourceEvent, ...restEvent }, [xTransform, yTransform]) => {
           if (this.destroyed || !this.rendered) return;
           let [newXTransform, newYTransform] = [xTransform, yTransform];
-          const { type, touches, transform: eventTransform } = sourceEvent;
+          const { type, changedTouches: touches, transform: eventTransform } = sourceEvent;
           if (type !== 'call') {
             // 表示事用户主动触发，如滚轮和移动，触摸缩放
             if (!this.xCanZoom$ && !this.yCanZoom$) return;
@@ -770,7 +772,7 @@ function bindEvents() {
             point = null;
             transform0 = null;
           }
-          if (sourceEvent.touches) {
+          if (sourceEvent.changedTouches) {
             if (longPress != 0) {
               clearTimeout(longPress);
               longPress = 0;
