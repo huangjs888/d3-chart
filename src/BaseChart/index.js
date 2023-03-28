@@ -3,7 +3,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2023-03-28 15:13:28
+ * @LastEditTime: 2023-03-28 17:20:20
  * @Description: 基础图表构造器
  */
 
@@ -1229,27 +1229,28 @@ class BaseChart {
         .on('contextmenu', null)
         .on('mouseout', null)
         .on('mousemove', null);
+      this.zoomSelection$ = null;
+    }
+    if (this.rootSelection$) {
       this.rootSelection$.select('.xlock').on('click', null);
       this.rootSelection$.select('.ylock').on('click', null);
       this.rootSelection$.select('.reset').on('click', null);
+      if (this.actions && this.actions.length) {
+        this.actions.forEach((a, i) => {
+          if (!a) return;
+          const { menus } = a;
+          this.rootSelection$.select(`.action-${i}`).on('click', null);
+          if (Array.isArray(menus)) {
+            menus.forEach((menu, j) => {
+              if (!menu) return;
+              this.rootSelection$.select(`.action-${i}-menu-${j}`).on('click', null);
+            });
+          }
+        });
+        d3.select('body').on('click', null);
+      }
       this.rootSelection$.remove();
       this.rootSelection$ = null;
-    }
-
-    if (this.actions && this.actions.length) {
-      this.actions.forEach((a, i) => {
-        if (!a) return;
-        const { menus } = a;
-        this.rootSelection$.select(`.action-${i}`).on('click', null);
-        if (Array.isArray(menus)) {
-          menus.forEach((menu, j) => {
-            if (!menu) return;
-            this.rootSelection$.select(`.action-${i}-menu-${j}`).on('click', null);
-          });
-        }
-      });
-      d3.select('body').on('click', null);
-      this.actions = null;
     }
     if (this.unBindResize$) {
       this.unBindResize$();
