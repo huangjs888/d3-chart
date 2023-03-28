@@ -3,7 +3,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2022-08-01 15:04:37
+ * @LastEditTime: 2023-03-28 15:11:01
  * @Description: 默认LineGraph构造器
  */
 
@@ -349,8 +349,9 @@ class LineGraph extends BaseChart {
   }
 
   destroy() {
-    if (this.line$) this.line$ = null;
-    if (this.filter$) this.filter$ = [];
+    this.line$ = null;
+    this.filter$ = null;
+    this.zooming$ = null;
     super.destroy();
     return this;
   }

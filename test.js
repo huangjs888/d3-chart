@@ -3,7 +3,7 @@
  * @Author: Huangjs
  * @Date: 2021-10-15 16:12:44
  * @LastEditors: Huangjs
- * @LastEditTime: 2022-07-29 16:22:58
+ * @LastEditTime: 2023-03-28 15:10:01
  * @Description: ******
  */
 
@@ -249,11 +249,11 @@ describe('HeatMap', () => {
   it('destroy', () => {
     heatMap.destroy();
     expect(heatMap.debounceDrawend$).toBeNull();
-    expect(heatMap.tempCanvas$).toEqual({});
+    expect(heatMap.tempCanvas$).toBeNull();
     expect(heatMap.zScale$).toBeNull();
     expect(heatMap.destroyed).toBe(true);
     expect(heatMap.rendered).toBe(false);
-    expect(heatMap.data).toEqual({});
+    expect(heatMap.data).toBeNull();
     expect(heatMap.rootSelection$).toBeNull();
   });
 });
@@ -352,10 +352,10 @@ describe('LineGraph', () => {
   it('destroy', () => {
     lineGraph.destroy();
     expect(lineGraph.line$).toBeNull();
-    expect(lineGraph.filter$).toEqual([]);
+    expect(lineGraph.filter$).toBeNull();
     expect(lineGraph.destroyed).toBe(true);
     expect(lineGraph.rendered).toBe(false);
-    expect(lineGraph.data).toEqual({});
+    expect(lineGraph.data).toBeNull();
     expect(lineGraph.rootSelection$).toBeNull();
   });
 });
@@ -435,13 +435,13 @@ describe('HeatMapLine', () => {
   it('destroy', () => {
     heatMap2.destroy();
     expect(heatMap2.debounceDrawend$).toBeNull();
-    expect(heatMap2.tempCanvas$).toEqual({});
+    expect(heatMap2.tempCanvas$).toBeNull();
     expect(heatMap2.zScale$).toBeNull();
     expect(heatMap2.line$).toBeNull();
-    expect(heatMap2.filter$).toEqual([]);
+    expect(heatMap2.filter$).toBeNull();
     expect(heatMap2.destroyed).toBe(true);
     expect(heatMap2.rendered).toBe(false);
-    expect(heatMap2.data).toEqual({});
+    expect(heatMap2.data).toBeNull();
     expect(heatMap2.rootSelection$).toBeNull();
   });
 });

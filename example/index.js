@@ -2,12 +2,12 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2022-07-29 16:32:11
+ * @LastEditTime: 2023-02-15 11:19:25
  * @Description: ******
  */
 
 import { format } from 'd3-format';
-import { HeatMap, LineGraph } from '../src/index';
+import { HeatMap, LineGraph } from '../lib/index';
 import './data';
 import './index.less';
 

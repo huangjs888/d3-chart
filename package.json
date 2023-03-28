@@ -3,10 +3,8 @@
   "version": "3.0.1",
   "description": "Implement some charts based on d3 library.",
   "main": "lib/index.js",
-  "module": "src/index.js",
   "unpkg": "dist/d3.chart.min.js",
   "files": [
-    "src/**/*.js",
     "lib/**/*.js",
     "dist/**/*.js"
   ],

@@ -3,7 +3,7 @@
  * @Author: Huangjs
  * @Date: 2021-12-07 15:02:48
  * @LastEditors: Huangjs
- * @LastEditTime: 2022-08-01 15:03:33
+ * @LastEditTime: 2023-03-27 14:01:00
  * @Description: 按需生成HeatMap构造器
  */
 
@@ -283,64 +283,23 @@ function drawing(zContext, { xScale, yScale }) {
 }
 
 function tipCompute(prevRes, point, scaleAxis) {
-  const data = this.data.heat;
   const scaleOpt = this.scale;
   const { cross, average } = this.tooltip;
-  let [x0, y0] = point;
-  const xyzValue = [];
-  if (this.showHeat$ && cross === 'xy') {
-    const xScale = (scaleAxis.x || scaleAxis.x2).scale;
-    const yScale = (scaleAxis.y || scaleAxis.y2).scale;
-    let xval = xScale.invert(x0);
-    let yval = yScale.invert(y0);
-    let zval = 0;
-    const [xi0, xi1] = util.findNearIndex(+xval, data.x);
-    const [yi0, yi1] = util.findNearIndex(+yval, data.y);
-    if (xi0 >= 0 && xi1 >= 0 && yi0 >= 0 && yi1 >= 0) {
-      const xval0 = +data.x[xi0];
-      const xval1 = +data.x[xi1];
-      const yval0 = +data.y[yi0];
-      const yval1 = +data.y[yi1];
-      if (xval0 === xval1 && yval0 === yval1) {
-        // 正好移动到了xy交叉数据点上
-        zval = (data.z[yi0] || [])[xi0];
-      } else if (average) {
-        const xInterp = computeFactor(+xval, xval0, xval1, xi0, xi1);
-        const yInterp = computeFactor(+yval, yval0, yval1, yi0, yi1);
-        const val00 = (data.z[yInterp.bin0] || [])[xInterp.bin0];
-        const val01 = (data.z[yInterp.bin0] || [])[xInterp.bin1];
-        const val10 = (data.z[yInterp.bin1] || [])[xInterp.bin0];
-        const val11 = (data.z[yInterp.bin1] || [])[xInterp.bin1];
-        zval = matrixAverage(xInterp.factor, val00, val01, yInterp.factor, val10, val11);
-      } else {
-        const xi = Math.abs(xval - xval0) > Math.abs(xval - xval1) ? xi1 : xi0;
-        const yi = Math.abs(yval - yval0) > Math.abs(yval - yval1) ? yi1 : yi0;
-        xval = +data.x[xi];
-        yval = +data.y[yi];
-        zval = (data.z[yi] || [])[xi];
-        x0 = xScale(xval);
-        y0 = yScale(yval);
-      }
-      xyzValue.push(
-        {
-          ...scaleOpt[scaleAxis.x ? 'x' : 'x2'],
-          value: xval,
-        },
-        {
-          ...scaleOpt[scaleAxis.y ? 'y' : 'y2'],
-          value: yval,
-        },
-        {
-          ...scaleOpt.z,
-          value: zval,
-        }
-      );
-    }
-  }
-  if (xyzValue.length > 0) {
+  const { point: newPoint, value } =
+    cross === 'xy' ? this.getPointData({ point, scaleAxis }, average) : { point, value: [] };
+  if (value.length > 0) {
     // 去掉第一个因为第一个是标题
     const prevValue = (prevRes.data || []).slice(1);
-    const ndata = [...xyzValue, ...prevValue];
+    const ndata = [
+      ...value.map((v, i) => {
+        const k = i === 0 ? 'x' : i === 1 ? 'y' : 'z';
+        return {
+          ...scaleOpt[scaleAxis[k] ? k : `${k}${k != 'z' ? '2' : ''}`],
+          value: v,
+        };
+      }),
+      ...prevValue,
+    ];
     const result = (selection) => {
       selection
         .selectAll('div')
@@ -359,7 +318,7 @@ function tipCompute(prevRes, point, scaleAxis) {
               }">${d.format(d.value)}${d.unit || ''}</span>`
         );
     };
-    return { x0, y0, data: ndata, result };
+    return { x0: newPoint[0], y0: newPoint[1], data: ndata, result };
   }
   return { ...prevRes };
 }
@@ -654,6 +613,63 @@ export default function generateHeatMap(superName) {
       });
     }
 
+    getPointData(e, avg) {
+      const data = this.data.heat;
+      const { point, sourceEvent, scaleAxis } = e;
+      let currentPoint = point;
+      if (!currentPoint) {
+        if (!sourceEvent) {
+          currentPoint = [0, 0];
+        } else {
+          const touches = sourceEvent.type === 'touchend' ? sourceEvent.changedTouches : sourceEvent.touches;
+          currentPoint = d3.pointer(touches ? touches[0] : sourceEvent, this.zoomSelection$.node());
+        }
+      }
+      let [x0, y0] = currentPoint;
+      const value = [];
+      if (this.showHeat$) {
+        const xScale = (scaleAxis.x || scaleAxis.x2).scale;
+        const yScale = (scaleAxis.y || scaleAxis.y2).scale;
+        let xval = xScale.invert(x0);
+        let yval = yScale.invert(y0);
+        let zval = 0;
+        const [xi0, xi1] = util.findNearIndex(+xval, data.x);
+        const [yi0, yi1] = util.findNearIndex(+yval, data.y);
+        // 确保point在图层内
+        if (xi0 >= 0 && xi1 >= 0 && yi0 >= 0 && yi1 >= 0) {
+          const xval0 = +data.x[xi0];
+          const xval1 = +data.x[xi1];
+          const yval0 = +data.y[yi0];
+          const yval1 = +data.y[yi1];
+          if (xval0 === xval1 && yval0 === yval1) {
+            // 正好移动到了xy交叉数据点上
+            zval = (data.z[yi0] || [])[xi0];
+          } else if (avg) {
+            const xInterp = computeFactor(+xval, xval0, xval1, xi0, xi1);
+            const yInterp = computeFactor(+yval, yval0, yval1, yi0, yi1);
+            const val00 = (data.z[yInterp.bin0] || [])[xInterp.bin0];
+            const val01 = (data.z[yInterp.bin0] || [])[xInterp.bin1];
+            const val10 = (data.z[yInterp.bin1] || [])[xInterp.bin0];
+            const val11 = (data.z[yInterp.bin1] || [])[xInterp.bin1];
+            zval = matrixAverage(xInterp.factor, val00, val01, yInterp.factor, val10, val11);
+          } else {
+            const xi = Math.abs(xval - xval0) > Math.abs(xval - xval1) ? xi1 : xi0;
+            const yi = Math.abs(yval - yval0) > Math.abs(yval - yval1) ? yi1 : yi0;
+            xval = +data.x[xi];
+            yval = +data.y[yi];
+            zval = (data.z[yi] || [])[xi];
+            x0 = xScale(xval);
+            y0 = yScale(yval);
+          }
+          value.push(xval, yval, zval);
+        }
+      }
+      return {
+        point: [x0, y0],
+        value,
+      };
+    }
+
     getLineMark() {
       const result = [];
       const lineMarkX = this.lineMark$[0];
@@ -800,8 +816,17 @@ export default function generateHeatMap(superName) {
         this.debounceDrawend$.cancel();
         this.debounceDrawend$ = null;
       }
-      if (this.zScale$) this.zScale$ = null;
-      if (this.tempCanvas$) this.tempCanvas$ = {};
+      this.zScale$ = null;
+      this.tempCanvas$ = null;
+      this.click$ = null;
+      this.dblclick$ = null;
+      this.contextmenu$ = null;
+      this.zoomstart$ = null;
+      this.zooming$ = null;
+      this.zoomend$ = null;
+      this.resize$ = null;
+      this.reset$ = null;
+      this.canZoom$ = null;
       super.destroy();
       return this;
     }

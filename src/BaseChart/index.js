@@ -3,7 +3,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2022-08-03 16:27:59
+ * @LastEditTime: 2023-03-28 15:13:28
  * @Description: 基础图表构造器
  */
 
@@ -21,22 +21,22 @@ const unlockPath =
   'M650 432.6v-99.4c0-76.3-61.8-138.1-138.1-138.1S373.8 258 373.8 334.3v99.4H650z m-382.9 1.1l-0.1-3.1V322.5c0-59.9 23.8-117.4 66.2-159.8C375.6 120.3 433 96.5 493 96.5h37.9c124.8 0 225.9 101.2 225.9 225.9v111.3c58.2 8.1 101.5 57.9 101.5 116.7v258.3c0 65.1-52.7 117.8-117.8 117.8H283.3c-65.1 0-117.8-52.7-117.8-117.8V550.5c0-58.8 43.3-108.6 101.6-116.8z m217.6 266v77c0 15 12.2 27.2 27.2 27.2s27.2-12.2 27.2-27.2v-77c33.5-13.1 53-48.2 46.3-83.5-6.7-35.4-37.5-61-73.5-61s-66.9 25.6-73.5 61c-6.7 35.3 12.8 70.4 46.3 83.5zm272 -369h-106.5v103h106.5z';
 const actionButtons = {
   download: {
-    label: '下载视图',
+    title: '下载视图',
     path: downloadPath,
     className: 'download',
   },
   reset: {
-    label: '重置视图',
+    title: '重置视图',
     path: resetPath,
     className: 'reset',
   },
   xlock: {
-    label: 'X轴缩放开关',
+    title: 'X轴缩放开关',
     path: unlockPath,
     className: 'xlock',
   },
   ylock: {
-    label: 'Y轴缩放开关',
+    title: 'Y轴缩放开关',
     path: unlockPath,
     className: 'ylock',
   },
@@ -409,6 +409,14 @@ function updateElement(size) {
       .style('left', `${this.scale.y ? zw - offset - iconSize : offset}px`);
     offset += 23;
   }
+  this.actions.forEach((a, i) => {
+    if (!a) return;
+    svgDiv
+      .select(`.action-${i}`)
+      .style('top', `${this.scale.x ? -padding[0] : zh + padding[2] - iconSize}px`)
+      .style('left', `${this.scale.y ? zw - offset - iconSize : offset}px`);
+    offset += 23;
+  });
   group
     .select('.zLabel')
     .attr(
@@ -491,22 +499,52 @@ function createElement(container, size) {
   if (this.download) {
     actions.push(actionButtons.download);
   }
-  actions.forEach((action) => {
-    divSelection
+  [...actions, ...this.actions].forEach((action, i) => {
+    const index = i - actions.length;
+    if (!action) return;
+    const { className, title, path, text, src, menus } = action;
+    const actionSelection = divSelection
       .append('div')
-      .attr('class', action.className)
+      .attr('class', index < 0 ? className : `action-${index}`)
       .style('position', 'absolute')
-      .attr('title', action.label)
+      .attr('title', title || '')
       .style('display', 'inline-flex')
-      .style('font-size', `${iconSize}px`)
-      .append('svg')
-      .attr('xmlns', svgXmlns)
-      .attr('fill', 'currentColor')
-      .attr('viewBox', '0 0 1024 1024')
-      .attr('width', '1em')
-      .attr('height', '1em')
-      .append('path')
-      .attr('d', action.path);
+      .style('font-size', `${path ? iconSize : 12}px`);
+    if (path) {
+      actionSelection
+        .append('svg')
+        .attr('xmlns', svgXmlns)
+        .attr('fill', 'currentColor')
+        .attr('viewBox', '0 0 1024 1024')
+        .attr('width', '1em')
+        .attr('height', '1em')
+        .append('path')
+        .attr('d', path);
+    } else if (text) {
+      actionSelection.append('span').text(text);
+    } else if (src) {
+      actionSelection.append('img').attr('src', src).attr('width', iconSize).attr('height', iconSize);
+    }
+    if (Array.isArray(menus)) {
+      const menusSelection = actionSelection
+        .append('div')
+        .attr('class', `action-menu action-${index}-menu`)
+        .style('position', 'absolute')
+        .style('top', '24px')
+        .style('font-size', '12px')
+        .style('padding', '6px 0px');
+      let maxWidth = 0;
+      menus.forEach((menu, j) => {
+        if (!menu) return;
+        const { text } = menu;
+        maxWidth = Math.max(maxWidth, util.measureSvgText(text, 12));
+        menusSelection.append('div').attr('class', `action-${index}-menu-${j}`).style('padding', '6px 12px').text(text);
+      });
+      menusSelection
+        .style('width', `${maxWidth + 24}px`)
+        .style('left', `${-(maxWidth + 24) / 2}px`)
+        .style('display', 'none');
+    }
   });
   if (this.tooltip) {
     const { cross } = this.tooltip;
@@ -679,52 +717,53 @@ function bindEvents() {
           if (this.destroyed || !this.rendered) return;
           let [newXTransform, newYTransform] = [xTransform, yTransform];
           const { type, changedTouches: touches, transform: eventTransform } = sourceEvent;
+          // 表示事用户主动触发，如滚轮和移动，触摸缩放
           if (type !== 'call') {
-            // 表示事用户主动触发，如滚轮和移动，触摸缩放
-            if (!this.xCanZoom$ && !this.yCanZoom$) return;
-            const t = transform.k / transform0.k;
-            let p = null;
-            let lx = null;
-            let ly = null;
-            if (touches) {
-              // 表示移动端触摸事件
-              let np = null;
-              let np1 = null;
-              for (let i = 0, len = touches.length; i < len; i += 1) {
-                const touch = touches.item(i);
-                const pt = d3.pointer(touch, element);
-                if (point[0] && point[0][2] === touch.identifier) np = pt;
-                else if (point[1] && point[1][2] === touch.identifier) np1 = pt;
+            if (this.xCanZoom$ || this.yCanZoom$) {
+              const t = transform.k / transform0.k;
+              let p = null;
+              let lx = null;
+              let ly = null;
+              if (touches) {
+                // 表示移动端触摸事件
+                let np = null;
+                let np1 = null;
+                for (let i = 0, len = touches.length; i < len; i += 1) {
+                  const touch = touches.item(i);
+                  const pt = d3.pointer(touch, element);
+                  if (point[0] && point[0][2] === touch.identifier) np = pt;
+                  else if (point[1] && point[1][2] === touch.identifier) np1 = pt;
+                }
+                if (point[0]) {
+                  p = np || point[0][0];
+                  lx = this.xCanZoom$ && point[0][1][0];
+                  ly = this.yCanZoom$ && point[0][1][1];
+                  if (point[1]) {
+                    const p1 = np1 || point[1][0];
+                    const [lx1, ly1] = point[1][1];
+                    p = [(p[0] + p1[0]) / 2, (p[1] + p1[1]) / 2];
+                    lx = this.xCanZoom$ && [(lx[0] + lx1[0]) / 2, (lx[1] + lx1[1]) / 2];
+                    ly = this.yCanZoom$ && [(ly[0] + ly1[0]) / 2, (ly[1] + ly1[1]) / 2];
+                  }
+                }
+              } else {
+                p = d3.pointer(sourceEvent, element);
+                const changed = p[0] !== point[0][0] || p[1] !== point[0][1]; // zoom的时候点（鼠标）是否移动过
+                const wheel = type === 'wheel'; // 是否是滚轮
+                if (wheel && !changed) p = point[0];
+                lx = this.xCanZoom$ && (wheel && changed ? xTransform.invert(p) : point[1][0]);
+                ly = this.yCanZoom$ && (wheel && changed ? yTransform.invert(p) : point[1][1]);
               }
-              if (point[0]) {
-                p = np || point[0][0];
-                lx = this.xCanZoom$ && point[0][1][0];
-                ly = this.yCanZoom$ && point[0][1][1];
-                if (point[1]) {
-                  const p1 = np1 || point[1][0];
-                  const [lx1, ly1] = point[1][1];
-                  p = [(p[0] + p1[0]) / 2, (p[1] + p1[1]) / 2];
-                  lx = this.xCanZoom$ && [(lx[0] + lx1[0]) / 2, (lx[1] + lx1[1]) / 2];
-                  ly = this.yCanZoom$ && [(ly[0] + ly1[0]) / 2, (ly[1] + ly1[1]) / 2];
+              if (p) {
+                if (lx) {
+                  newXTransform = this.transform$('x', xTransform, t, p, lx);
+                }
+                if (ly) {
+                  newYTransform = this.transform$('y', yTransform, t, p, ly);
                 }
               }
-            } else {
-              p = d3.pointer(sourceEvent, element);
-              const changed = p[0] !== point[0][0] || p[1] !== point[0][1]; // zoom的时候点（鼠标）是否移动过
-              const wheel = type === 'wheel'; // 是否是滚轮
-              if (wheel && !changed) p = point[0];
-              lx = this.xCanZoom$ && (wheel && changed ? xTransform.invert(p) : point[1][0]);
-              ly = this.yCanZoom$ && (wheel && changed ? yTransform.invert(p) : point[1][1]);
+              transform0 = transform;
             }
-            if (p) {
-              if (lx) {
-                newXTransform = this.transform$('x', xTransform, t, p, lx);
-              }
-              if (ly) {
-                newYTransform = this.transform$('y', yTransform, t, p, ly);
-              }
-            }
-            transform0 = transform;
           } else if (eventTransform) {
             // 如果存在xy缩放，则会有补间调用，万一补间一半，触发了滚轮或移动，则补间会停止，造成无法到达指定缩放位置，所以xy锁定的时候应该忽略补间
             // transform和eventTransform原本是一样的，但是动画补间的每一次调用时transform会变化，直到最后一次才会和eventTransform一样
@@ -870,6 +909,41 @@ function bindEvents() {
       }
     });
   }
+  this.actions.forEach((a, i) => {
+    if (!a) return;
+    const { action, menus } = a;
+    const am = this.rootSelection$.select(`.action-${i}-menu`);
+    const at = this.rootSelection$.select(`.action-${i}`);
+    at.on('click', (e) => {
+      e.stopPropagation();
+      if (e.currentTarget === at.node()) {
+        if (this.destroyed) return;
+        if (action) {
+          action(this.rootSelection$, () => {});
+        }
+        const display = am.style('display');
+        am.style('display', display === 'none' ? 'block' : 'none');
+      }
+    });
+    if (Array.isArray(menus)) {
+      menus.forEach((menu, j) => {
+        if (!menu) return;
+        this.rootSelection$.select(`.action-${i}-menu-${j}`).on('click', (e) => {
+          e.stopPropagation();
+          if (this.destroyed) return;
+          if (menu.action) {
+            menu.action(this.rootSelection$, () => {});
+          }
+          am.style('display', 'none');
+        });
+      });
+    }
+  });
+  if (this.actions.length) {
+    d3.select('body').on('click', () => {
+      this.rootSelection$.selectAll('.action-menu').style('display', 'none');
+    });
+  }
 }
 
 class BaseChart {
@@ -883,6 +957,7 @@ class BaseChart {
       rHeight,
       fontSize = 12,
       download,
+      actions,
       tooltip,
       zoom,
       scale,
@@ -937,6 +1012,7 @@ class BaseChart {
       y2: null,
       ...scale,
     };
+    this.actions = Array.isArray(actions) ? actions : [];
     this.fontSize = fontSize;
     this.data = data || {};
     this.dataDomains$ = {};
@@ -1141,17 +1217,53 @@ class BaseChart {
   destroy() {
     this.destroyed = true;
     this.rendered = false;
-    this.data = {};
-    this.zoomer$.on('start', null).on('zoom', null).on('end', null);
-    this.zoomSelection$
-      .on('click', null)
-      .on('dblclick', null)
-      .on('contextmenu', null)
-      .on('mouseout', null)
-      .on('mousemove', null);
-    if (this.unBindResize$) this.unBindResize$();
-    this.rootSelection$.remove();
-    this.rootSelection$ = null;
+    this.data = null;
+    if (this.zoomer$) {
+      this.zoomer$.on('start', null).on('zoom', null).on('end', null);
+      this.zoomer$ = null;
+    }
+    if (this.zoomSelection$) {
+      this.zoomSelection$
+        .on('click', null)
+        .on('dblclick', null)
+        .on('contextmenu', null)
+        .on('mouseout', null)
+        .on('mousemove', null);
+      this.rootSelection$.select('.xlock').on('click', null);
+      this.rootSelection$.select('.ylock').on('click', null);
+      this.rootSelection$.select('.reset').on('click', null);
+      this.rootSelection$.remove();
+      this.rootSelection$ = null;
+    }
+
+    if (this.actions && this.actions.length) {
+      this.actions.forEach((a, i) => {
+        if (!a) return;
+        const { menus } = a;
+        this.rootSelection$.select(`.action-${i}`).on('click', null);
+        if (Array.isArray(menus)) {
+          menus.forEach((menu, j) => {
+            if (!menu) return;
+            this.rootSelection$.select(`.action-${i}-menu-${j}`).on('click', null);
+          });
+        }
+      });
+      d3.select('body').on('click', null);
+      this.actions = null;
+    }
+    if (this.unBindResize$) {
+      this.unBindResize$();
+      this.unBindResize$ = null;
+    }
+    this.click$ = null;
+    this.dblclick$ = null;
+    this.contextmenu$ = null;
+    this.zoomstart$ = null;
+    this.zooming$ = null;
+    this.zoomend$ = null;
+    this.resize$ = null;
+    this.reset$ = null;
+    this.canZoom$ = null;
   }
 
   resize() {
