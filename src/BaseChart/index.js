@@ -3,7 +3,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2023-03-28 17:20:20
+ * @LastEditTime: 2023-04-11 13:48:46
  * @Description: 基础图表构造器
  */
 
@@ -859,17 +859,15 @@ function bindEvents() {
     })
     .datum([d3.zoomIdentity, d3.zoomIdentity])
     .node();
-  if (!(window.navigator.maxTouchPoints || 'ontouchstart' in window)) {
-    selection
-      .on('mouseout', (e) => {
-        if (this.destroyed || !this.rendered) return;
-        hideTooltip(e.relatedTarget);
-      })
-      .on('mousemove', (e) => {
-        if (this.destroyed || !this.rendered) return;
-        showTooltip(d3.pointer(e));
-      });
-  }
+  selection
+    .on('mouseout', (e) => {
+      if (this.destroyed || !this.rendered) return;
+      hideTooltip(e.relatedTarget);
+    })
+    .on('mousemove', (e) => {
+      if (this.destroyed || !this.rendered) return;
+      showTooltip(d3.pointer(e));
+    });
   if (!this.zoom.doubleZoom) {
     // 取消双击放大
     selection.on('dblclick.zoom', null);

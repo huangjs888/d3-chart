@@ -3,7 +3,7 @@
  * @Author: Huangjs
  * @Date: 2021-12-07 15:02:48
  * @LastEditors: Huangjs
- * @LastEditTime: 2023-03-27 14:01:00
+ * @LastEditTime: 2023-04-11 14:53:26
  * @Description: 按需生成HeatMap构造器
  */
 
@@ -286,7 +286,7 @@ function tipCompute(prevRes, point, scaleAxis) {
   const scaleOpt = this.scale;
   const { cross, average } = this.tooltip;
   const { point: newPoint, value } =
-    cross === 'xy' ? this.getPointData({ point, scaleAxis }, average) : { point, value: [] };
+    cross === 'xy' ? this.getPointData(point, scaleAxis, average) : { point, value: [] };
   if (value.length > 0) {
     // 去掉第一个因为第一个是标题
     const prevValue = (prevRes.data || []).slice(1);
@@ -613,19 +613,13 @@ export default function generateHeatMap(superName) {
       });
     }
 
-    getPointData(e, avg) {
-      const data = this.data.heat;
-      const { point, sourceEvent, scaleAxis } = e;
+    getPointData(point, scaleAxis, avg) {
       let currentPoint = point;
-      if (!currentPoint) {
-        if (!sourceEvent) {
-          currentPoint = [0, 0];
-        } else {
-          const touches = sourceEvent.type === 'touchend' ? sourceEvent.changedTouches : sourceEvent.touches;
-          currentPoint = d3.pointer(touches ? touches[0] : sourceEvent, this.zoomSelection$.node());
-        }
+      if (!Array.isArray(point)) {
+        currentPoint = d3.pointer(point, this.zoomSelection$.node());
       }
       let [x0, y0] = currentPoint;
+      const data = this.data.heat;
       const value = [];
       if (this.showHeat$) {
         const xScale = (scaleAxis.x || scaleAxis.x2).scale;
@@ -665,8 +659,8 @@ export default function generateHeatMap(superName) {
         }
       }
       return {
-        point: [x0, y0],
         value,
+        point: [x0, y0],
       };
     }
 
