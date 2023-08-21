@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-10-21 16:11:29
  * @LastEditors: Huangjs
- * @LastEditTime: 2023-08-21 13:53:33
+ * @LastEditTime: 2023-08-21 14:39:09
  * @Description: ******
  */
 
@@ -44,7 +44,10 @@ module.exports = {
       {
         test: /\.js$/,
         // d3|internmap|delaunator|robust-predicates使用了es6，需要转换成es5
-        exclude: /node_modules(?!(\/|\\)((d3(-.+)?)|internmap|delaunator|robust-predicates))/,
+        exclude:
+          MOD_ENV === 'esm'
+            ? /node_modules/
+            : /node_modules(?!(\/|\\)((d3(-.+)?)|internmap|delaunator|robust-predicates))/,
         use: 'babel-loader',
       },
     ],
