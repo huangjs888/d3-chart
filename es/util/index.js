@@ -12,7 +12,6 @@ import debounce from 'lodash/debounce';
 import noop from 'lodash/noop';
 import delay from 'lodash/delay';
 import uniqueId from 'lodash/uniqueId';
-
 const measureSvgText = (text, fontSize) => {
   const svgXmlns = 'http://www.w3.org/2000/svg';
   const svgDom = document.createElementNS(svgXmlns, 'svg');
@@ -55,10 +54,9 @@ const findNearIndex = (val, arr, single) => {
   // 取夹在中间的两边数值的索引
   return [end, start];
 };
-
-const isNumber = (v) => typeof v === 'number' && !Number.isNaN(v);
+const isNumber = v => typeof v === 'number' && !Number.isNaN(v);
 const isCanEmit = ([x0, y0], [x1, y1], l = 3) => (x1 - x0) ** 2 + (y1 - y0) ** 2 > l ** 2;
-const guid = (prefix) => {
+const guid = prefix => {
   let n = new Date().getTime().toString(32);
   for (let i = 0; i < 5; i += 1) {
     n += Math.floor(Math.random() * 65535).toString(32);
@@ -66,15 +64,4 @@ const guid = (prefix) => {
   n += uniqueId(prefix).toString(32);
   return prefix ? `${prefix}-${n}` : n;
 };
-
-export {
-  measureSvgText,
-  findNearIndex,
-  isNumber,
-  isCanEmit,
-  guid,
-  differenceWith,
-  debounce,
-  noop,
-  delay,
-};
+export { measureSvgText, findNearIndex, isNumber, isCanEmit, guid, differenceWith, debounce, noop, delay };

@@ -2,14 +2,16 @@
  * @Author: Huangjs
  * @Date: 2021-10-25 17:29:05
  * @LastEditors: Huangjs
- * @LastEditTime: 2022-07-29 16:27:46
+ * @LastEditTime: 2023-08-21 14:11:18
  * @Description: ******
 -->
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scaleable=no" name="viewport" />
+    <meta
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scaleable=no"
+      name="viewport" />
     <title>d3-chart</title>
     <script src="./data.js"></script>
     <!-- <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -53,7 +55,7 @@
     <script>
       (function () {
         var data = CHART_DATA;
-        var heatMap = new d3Chart.HeatMap({
+        var heatMap = new D3Chart.HeatMap({
           container: '#heatmap',
           padding: [20, 62, 36, 62],
           download: 'png',
@@ -99,7 +101,7 @@
             },
           },
         });
-        var lineGraph = new d3Chart.LineGraph({
+        var lineGraph = new D3Chart.LineGraph({
           container: '#linegraph',
           padding: [20, 12, 40, 62],
           smooth: 1,
@@ -202,7 +204,7 @@
               },
             ],
           },
-          true
+          true,
         );
       })();
     </script>

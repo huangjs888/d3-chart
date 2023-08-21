@@ -3,7 +3,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2023-04-11 13:48:46
+ * @LastEditTime: 2023-05-12 14:11:32
  * @Description: 基础图表构造器
  */
 
@@ -186,7 +186,10 @@ function getScaleAxis() {
   const scaleAxis = {};
   axisType.forEach((key) => {
     if (this.scale[key]) {
-      const { scale, axis } = this.rescale$(key === 'x' || key === 'x2' ? xTransform : yTransform, key);
+      const { scale, axis } = this.rescale$(
+        key === 'x' || key === 'x2' ? xTransform : yTransform,
+        key,
+      );
       scaleAxis[key] = {
         axis,
         scale,
@@ -251,7 +254,8 @@ function createScale() {
     const as = this.axisScale$[key];
     if (as) {
       const { scale, axis } = as;
-      const recale = key === 'x' || key === 'x2' ? transform.rescaleX(scale) : transform.rescaleY(scale);
+      const recale =
+        key === 'x' || key === 'x2' ? transform.rescaleX(scale) : transform.rescaleY(scale);
       return {
         scale: recale,
         axis: axis.scale(recale),
@@ -316,7 +320,10 @@ function updateZoom() {
   }
   this.zoomer$
     .extent(viewExtent)
-    .scaleExtent([(scaleExtent[0][0] * scaleExtent[0][1]) ** 2, (scaleExtent[1][0] * scaleExtent[1][1]) ** 2])
+    .scaleExtent([
+      (scaleExtent[0][0] * scaleExtent[0][1]) ** 2,
+      (scaleExtent[1][0] * scaleExtent[1][1]) ** 2,
+    ])
     .translateExtent(translateExtent);
   this.zoomExtent$ = { viewExtent, scaleExtent, translateExtent };
 }
@@ -329,12 +336,16 @@ function createZoom() {
       const { viewExtent, translateExtent, scaleExtent } = this.zoomExtent$;
       const tk = Math.max(
         axis === 'x' ? scaleExtent[0][0] : scaleExtent[0][1],
-        Math.min(axis === 'x' ? scaleExtent[1][0] : scaleExtent[1][1], transform.k * t)
+        Math.min(axis === 'x' ? scaleExtent[1][0] : scaleExtent[1][1], transform.k * t),
       );
       const tx = p[0] - tk * l[0];
       const ty = p[1] - tk * l[1];
       if (tk !== transform.k || tx !== transform.x || ty !== transform.y) {
-        transform = this.zoomer$.constrain()(d3.zoomIdentity.translate(tx, ty).scale(tk), viewExtent, translateExtent);
+        transform = this.zoomer$.constrain()(
+          d3.zoomIdentity.translate(tx, ty).scale(tk),
+          viewExtent,
+          translateExtent,
+        );
       }
     }
     return transform;
@@ -359,21 +370,34 @@ function updateElement(size) {
     if (this.scale.x.showRange || typeof this.scale.x.showRange === 'undefined') {
       group
         .select('.xLabel')
-        .attr('transform', `translate(${zw / 2} ${zh + padding[2] - iconSize + baselineDelt}) rotate(0)`);
+        .attr(
+          'transform',
+          `translate(${zw / 2} ${zh + padding[2] - iconSize + baselineDelt}) rotate(0)`,
+        );
     }
   }
-  if (this.scale.x2 && (this.scale.x2.showRange || typeof this.scale.x2.showRange === 'undefined')) {
-    group.select('.x2Label').attr('transform', `translate(${zw / 2} ${baselineDelt - padding[0]}) rotate(0)`);
+  if (
+    this.scale.x2 &&
+    (this.scale.x2.showRange || typeof this.scale.x2.showRange === 'undefined')
+  ) {
+    group
+      .select('.x2Label')
+      .attr('transform', `translate(${zw / 2} ${baselineDelt - padding[0]}) rotate(0)`);
   }
   if (this.scale.y && (this.scale.y.showRange || typeof this.scale.y.showRange === 'undefined')) {
-    group.select('.yLabel').attr('transform', `translate(${baselineDelt - padding[3]} ${zh / 2}) rotate(-90)`);
+    group
+      .select('.yLabel')
+      .attr('transform', `translate(${baselineDelt - padding[3]} ${zh / 2}) rotate(-90)`);
   }
   if (this.scale.y2) {
     group.select('.y2Axis').attr('transform', `translate(${zw},0)`);
     if (this.scale.y2.showRange || typeof this.scale.y2.showRange === 'undefined') {
       group
         .select('.y2Label')
-        .attr('transform', `translate(${zw + padding[1] - iconSize + baselineDelt} ${zh / 2}) rotate(-90)`);
+        .attr(
+          'transform',
+          `translate(${zw + padding[1] - iconSize + baselineDelt} ${zh / 2}) rotate(-90)`,
+        );
     }
   }
   const svgDiv = this.rootSelection$
@@ -423,7 +447,7 @@ function updateElement(size) {
       'transform',
       `translate(${this.scale.y ? zw - offset : offset} ${
         (this.scale.x ? -padding[0] : zh + padding[2] - iconSize) + baselineDelt
-      })`
+      })`,
     );
 
   this.width = width;
@@ -462,7 +486,11 @@ function createElement(container, size) {
     if (this.scale[key]) {
       groupSelection.append('g').attr('class', `${key}Axis`);
       if (this.scale[key].showRange || typeof this.scale[key].showRange === 'undefined') {
-        groupSelection.append('g').attr('class', `${key}Label`).attr('fill', 'currentColor').append('text');
+        groupSelection
+          .append('g')
+          .attr('class', `${key}Label`)
+          .attr('fill', 'currentColor')
+          .append('text');
       }
     }
   });
@@ -523,7 +551,11 @@ function createElement(container, size) {
     } else if (text) {
       actionSelection.append('span').text(text);
     } else if (src) {
-      actionSelection.append('img').attr('src', src).attr('width', iconSize).attr('height', iconSize);
+      actionSelection
+        .append('img')
+        .attr('src', src)
+        .attr('width', iconSize)
+        .attr('height', iconSize);
     }
     if (Array.isArray(menus)) {
       const menusSelection = actionSelection
@@ -538,7 +570,11 @@ function createElement(container, size) {
         if (!menu) return;
         const { text } = menu;
         maxWidth = Math.max(maxWidth, util.measureSvgText(text, 12));
-        menusSelection.append('div').attr('class', `action-${index}-menu-${j}`).style('padding', '6px 12px').text(text);
+        menusSelection
+          .append('div')
+          .attr('class', `action-${index}-menu-${j}`)
+          .style('padding', '6px 12px')
+          .text(text);
       });
       menusSelection
         .style('width', `${maxWidth + 24}px`)
@@ -579,7 +615,9 @@ function createElement(container, size) {
   this.rootSelection$ = rootSelection;
   this.zoomSelection$ = zoomSelection;
   updateElement.call(this, size);
-  if (!(util.isNumber(size.width) && size.width > 1 && util.isNumber(size.height) && size.height > 1)) {
+  if (
+    !(util.isNumber(size.width) && size.width > 1 && util.isNumber(size.height) && size.height > 1)
+  ) {
     const resize = util.debounce(
       (e) => {
         if (this.destroyed) return;
@@ -594,7 +632,10 @@ function createElement(container, size) {
           {
             sourceEvent: e || null,
             target: this.rootSelection$,
-            transform: [d3.zoomTransform(this.zoomSelection$.node()), ...this.zoomSelection$.datum()],
+            transform: [
+              d3.zoomTransform(this.zoomSelection$.node()),
+              ...this.zoomSelection$.datum(),
+            ],
             scaleAxis: getScaleAxis.call(this),
             type: 'resize',
           },
@@ -602,11 +643,11 @@ function createElement(container, size) {
             width: this.width$,
             height: this.height$,
             padding: this.padding,
-          }
+          },
         );
       },
       250,
-      { leading: false, trailing: true }
+      { leading: false, trailing: true },
     );
     window.addEventListener('resize', resize);
     this.unBindResize$ = () => {
@@ -789,7 +830,9 @@ function bindEvents() {
           Object.keys(scaleAxis).forEach((key) => {
             const { axis, scale } = scaleAxis[key];
             this.rootSelection$.select(`.${key}Axis`).call(axis);
-            this.rootSelection$.select(`.${key}Label`).call(scaleLable, [this.scale[key], scale.domain()]);
+            this.rootSelection$
+              .select(`.${key}Label`)
+              .call(scaleLable, [this.scale[key], scale.domain()]);
           });
           if (touches) {
             if (longPress != 0) {
@@ -824,7 +867,7 @@ function bindEvents() {
             transform: [transform, xTransform, yTransform],
             scaleAxis: getScaleAxis.call(this),
           });
-        })
+        }),
     )
     .on('click', (e) => {
       if (this.destroyed) return;
@@ -1039,20 +1082,19 @@ class BaseChart {
 
   render(tf, ax = 'xy', ta = true) {
     this.rendered = true;
-    const transform = (Array.isArray(tf) ? tf[0] : tf) || d3.zoomTransform(this.zoomSelection$.node());
+    const transform =
+      (Array.isArray(tf) ? tf[0] : tf) || d3.zoomTransform(this.zoomSelection$.node());
     // 对this.zoomSelection$调用this.zoomer$.transform函数变换到指定的transform
     // 变换过程中用240ms及ease函数进行transition
-    (!ta ? this.zoomSelection$ : this.zoomSelection$.transition().duration(240).ease(d3.easeLinear)).call(
-      this.zoomer$.transform,
-      transform,
-      null,
-      {
-        type: 'call',
-        transform: tf,
-        zoomX: ax.indexOf('x') !== -1,
-        zoomY: ax.indexOf('y') !== -1,
-      }
-    );
+    (!ta
+      ? this.zoomSelection$
+      : this.zoomSelection$.transition().duration(240).ease(d3.easeLinear)
+    ).call(this.zoomer$.transform, transform, null, {
+      type: 'call',
+      transform: tf,
+      zoomX: ax.indexOf('x') !== -1,
+      zoomY: ax.indexOf('y') !== -1,
+    });
     return this;
   }
 
@@ -1103,7 +1145,10 @@ class BaseChart {
       type,
       sourceEvent: sourceEvent || null,
       target: target || this.zoomSelection$,
-      transform: transform || [d3.zoomTransform(this.zoomSelection$.node()), ...this.zoomSelection$.datum()],
+      transform: transform || [
+        d3.zoomTransform(this.zoomSelection$.node()),
+        ...this.zoomSelection$.datum(),
+      ],
       scaleAxis: scaleAxis || getScaleAxis.call(this),
     });
   }
@@ -1143,7 +1188,9 @@ class BaseChart {
       updateScale.call(this);
       let isZoom = false;
       ['x', 'y'].forEach((key) => {
-        isZoom = this.zoom[key] && ((this.scale[key] && domain[key]) || (this.scale[`${key}2`] && domain[`${key}2`]));
+        isZoom =
+          this.zoom[key] &&
+          ((this.scale[key] && domain[key]) || (this.scale[`${key}2`] && domain[`${key}2`]));
       });
       if (isZoom) {
         updateZoom.call(this);
@@ -1279,32 +1326,42 @@ class BaseChart {
   }
 
   downloadImage(name, content) {
+    const { ext, color, background } = this.download;
     const svgSel = this.rootSelection$.select('svg');
     const width = +svgSel.attr('width');
     const height = +svgSel.attr('height');
+    const svgNode = svgSel.node();
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = width;
     tempCanvas.height = height;
     const tempCxt = tempCanvas.getContext('2d');
     tempCxt.clearRect(0, 0, width, height);
-    if (content) {
-      tempCxt.drawImage(content.image, content.x, content.y);
+    if (background && background !== 'transparent') {
+      tempCxt.fillStyle = background;
+      tempCxt.fillRect(0, 0, width, height);
+    }
+    let tmpColor = svgNode.style.color;
+    if (color) {
+      svgNode.style.color = color;
     }
     const tempImage = new Image();
     tempImage.src = `data:image/svg+xml;base64,${window.btoa(
       window.unescape(
         window.encodeURIComponent(
           `<?xml version="1.0" standalone="no"?>
-          ${new XMLSerializer().serializeToString(svgSel.node())}`
-        )
-      )
+          ${new XMLSerializer().serializeToString(svgNode)}`,
+        ),
+      ),
     )}`;
-    const ext = this.download.ext || 'png';
+    svgNode.style.color = tmpColor;
     tempImage.onload = () => {
       tempCxt.drawImage(tempImage, 0, 0);
+      if (content) {
+        tempCxt.drawImage(content.image, content.x, content.y);
+      }
       const a = document.createElement('a');
-      a.download = `${name || 'basechart'}.${ext}`;
-      a.href = tempCanvas.toDataURL(`image/${ext}`);
+      a.download = `${name || 'basechart'}.${ext || 'png'}`;
+      a.href = tempCanvas.toDataURL(`image/${ext || 'png'}`);
       a.click();
     };
   }

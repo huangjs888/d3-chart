@@ -2,7 +2,7 @@
  * @Author: Huangjs
  * @Date: 2021-10-21 16:11:29
  * @LastEditors: Huangjs
- * @LastEditTime: 2022-06-23 11:25:47
+ * @LastEditTime: 2023-08-21 12:16:38
  * @Description: ******
  */
 
@@ -57,11 +57,7 @@ module.exports = (env, argv) => {
         {
           test: /\.jsx?$/,
           exclude: /node_modules/,
-          use: [
-            {
-              loader: 'babel-loader',
-            },
-          ],
+          use: 'babel-loader',
         },
       ],
     },

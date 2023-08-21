@@ -3,14 +3,15 @@
  * @Author: Huangjs
  * @Date: 2021-10-15 16:12:44
  * @LastEditors: Huangjs
- * @LastEditTime: 2023-03-28 15:10:01
+ * @LastEditTime: 2023-08-21 12:22:12
  * @Description: ******
  */
 
 import 'jest-canvas-mock';
 import * as d3 from 'd3';
-import { BaseChart, HeatMap, HeatMapLine, LineGraph, mixin } from './src/index';
+import { BaseChart, HeatMap, HeatMapLine, LineGraph } from './src/index';
 import * as util from './src/util/index';
+import mixin from './src/util/mixin';
 import data from './example/data';
 
 const heatData = { x: [], y: [], z: [] };
@@ -49,20 +50,7 @@ describe('util', () => {
     expect(util.isCanEmit([2, 4], [-3, 6])).toBe(true);
   });
 });
-describe('mixin-inherit-replace', () => {
-  test('replace', () => {
-    expect(new HeatMap()).not.toBeInstanceOf(LineGraph);
-    expect(new HeatMap()).toBeInstanceOf(BaseChart);
-    expect(new LineGraph()).toBeInstanceOf(BaseChart);
-    const revoke = mixin.replace(HeatMap, LineGraph);
-    expect(new HeatMap()).toBeInstanceOf(LineGraph);
-    expect(new LineGraph()).toBeInstanceOf(BaseChart);
-    revoke();
-    expect(new HeatMap()).not.toBeInstanceOf(LineGraph);
-    expect(new HeatMap()).toBeInstanceOf(BaseChart);
-    expect(new LineGraph()).toBeInstanceOf(BaseChart);
-  });
-
+describe('mixin-inherit', () => {
   class A {
     constructor() {
       this.aa = 'aa';
@@ -210,7 +198,11 @@ describe('HeatMap', () => {
     heatMap.setDomain({
       x: [0, 1000],
       y: [100, 800],
-      z: [1, ['#003ddf', '#00acc0', '#5afa00', '#ffff00', '#ffa500', '#ff0000'], [0, 0.2, 0.4, 0.6, 0.8, 1]],
+      z: [
+        1,
+        ['#003ddf', '#00acc0', '#5afa00', '#ffff00', '#ffa500', '#ff0000'],
+        [0, 0.2, 0.4, 0.6, 0.8, 1],
+      ],
     });
     expect(heatMap.scale.x.domain).toEqual([0, 1000]);
     expect(heatMap.scale.y.domain).toEqual([100, 800]);
@@ -425,7 +417,7 @@ describe('HeatMapLine', () => {
           },
         ],
       },
-      true
+      true,
     );
     expect(heatMap2.data.heat.x[1]).toBe(+data[1].time);
     expect(heatMap2.data.line[0].data[1].x).toBe(+data[1].time);

@@ -2,24 +2,25 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2023-02-15 11:19:25
+ * @LastEditTime: 2023-08-21 13:57:12
  * @Description: ******
  */
 
 import { format } from 'd3-format';
 import { HeatMap, LineGraph } from '../lib/index';
-import './data';
+import data from './data';
 import './index.less';
-
-// @ts-ignore
-const data = window.CHART_DATA;
 
 const exponentFormat = format('.4~g');
 
 const heatMap = new HeatMap({
   container: '#heatmap',
   padding: [20, 62, 36, 62],
-  download: 'png',
+  download: {
+    ext: 'png',
+    background: 'pink',
+    color: '#fff',
+  },
   legend: { show: true, width: 22, left: 12, right: 50 },
   tooltip: { cross: 'xy', select: 'x' },
   zoom: {
@@ -58,7 +59,11 @@ const heatMap = new HeatMap({
     z: {
       label: '值',
       subLabel: 'CO2',
-      domain: [1, ['#003ddf', '#00acc0', '#5afa00', '#ffff00', '#ffa500', '#ff0000'], [0, 0.2, 0.4, 0.6, 0.8, 1]],
+      domain: [
+        1,
+        ['#003ddf', '#00acc0', '#5afa00', '#ffff00', '#ffa500', '#ff0000'],
+        [0, 0.2, 0.4, 0.6, 0.8, 1],
+      ],
       unit: '',
       format: exponentFormat,
     },
@@ -209,5 +214,5 @@ lineGraph.setData(
       },
     ],
   },
-  true
+  true,
 );

@@ -3,7 +3,7 @@
  * @Author: Huangjs
  * @Date: 2021-03-17 16:23:00
  * @LastEditors: Huangjs
- * @LastEditTime: 2023-03-28 15:11:01
+ * @LastEditTime: 2023-08-21 13:34:05
  * @Description: 默认LineGraph构造器
  */
 
@@ -57,7 +57,7 @@ function lineLabel() {
         return legend;
       },
       (update) => update,
-      (exit) => exit.remove()
+      (exit) => exit.remove(),
     );
 
   const showData = util.differenceWith(this.data.line, this.filter$, (a, b) => a.key === b.key);
@@ -107,7 +107,7 @@ function tipCompute(prevRes, point, scaleAxis) {
       let yval = null;
       const [xi0, xi1] = util.findNearIndex(
         +xval,
-        data.map((d) => d[xxKey])
+        data.map((d) => d[xxKey]),
       );
       if (xi0 >= 0 && xi1 >= 0) {
         const xval0 = !data[xi0] ? 0 : data[xi0][xxKey];
@@ -161,7 +161,7 @@ function tipCompute(prevRes, point, scaleAxis) {
       let xval = null;
       const [yi0, yi1] = util.findNearIndex(
         +yval,
-        data.map((d) => d[yyKey])
+        data.map((d) => d[yyKey]),
       );
       if (yi0 >= 0 && yi1 >= 0) {
         const yval0 = !data[yi0] ? 0 : data[yi0][yyKey];
@@ -211,7 +211,7 @@ function tipCompute(prevRes, point, scaleAxis) {
                   : `<span style="background: ${d.color}; width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px;"></span>`
               }<span>${d.label ? `${d.label}: ` : ''}</span><span style="display: inline-block; ${
                 onlyOneMerge || !d.color ? '' : 'margin-left: 30px;'
-              }">${d.format(d.value)}${d.unit || ''}</span>`
+              }">${d.format(d.value)}${d.unit || ''}</span>`,
         );
     };
     return { x0, y0, data, result };
@@ -275,7 +275,9 @@ class LineGraph extends BaseChart {
         .attr('d', (d) =>
           this.line$
             .x(({ x, x2 }) => (typeof x === 'undefined' ? x2Scale(x2 || 0) : xScale(x || 0)))
-            .y(({ y, y2 }) => (typeof y === 'undefined' ? y2Scale(y2 || 0) : yScale(y || 0)))(d.data)
+            .y(({ y, y2 }) => (typeof y === 'undefined' ? y2Scale(y2 || 0) : yScale(y || 0)))(
+            d.data,
+          ),
         );
     };
     this.rootSelection$.select('.zLabel').on('click', (e) => {
@@ -326,7 +328,7 @@ class LineGraph extends BaseChart {
               });
             });
             return domains;
-          }
+          },
     );
     if (this.data.line.length !== 1) {
       this.tooltip.onlyOneMerge = false;

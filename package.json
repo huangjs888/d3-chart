@@ -3,34 +3,37 @@
   "version": "3.1.2",
   "description": "Implement some charts based on d3 library.",
   "main": "lib/index.js",
+  "module": "es/index.js",
   "unpkg": "dist/d3.chart.min.js",
-  "files": [
-    "lib/**/*.js",
-    "dist/**/*.js"
-  ],
   "exports": {
     "umd": "./dist/d3.chart.min.js",
+    "import": "./es/index.js",
     "default": "./lib/index.js"
   },
   "scripts": {
-    "start": "npm run lint && npm run test && npm run lib && npm run dist && npm run example:build && npm run example:start",
-    "clean:lib": "rimraf lib",
-    "clean:dist": "rimraf dist",
-    "clean:coverage": "rimraf coverage",
-    "clean:stats": "rimraf stats.json",
-    "lint": "./node_modules/.bin/eslint -f stylish ./src/*.js",
-    "test": "npm run clean:coverage && jest ./test.js",
-    "lib": "npm run clean:lib && babel ./src --out-dir ./lib --source-maps",
-    "dist": "npm run clean:dist && webpack --config webpack.config.js --mode production",
-    "example:build": "webpack --mode production --config ./example/webpack.config.js",
-    "example:develop": "webpack-dev-server  --mode development --config ./example/webpack.config.js",
-    "example:start": "webpack serve  --mode development --config ./example/webpack.config.js",
-    "analyz": "npm run clean:stats && webpack --profile --json > stats.json && webpack-bundle-analyzer ./stats.json"
+    "start": "npm run test && npm run build && npm run example:prod && npm run example:dev",
+    "build": "npm run clean && npm run lint && npm run build:esm && npm run build:cjs && npm run build:umd",
+    "build:merge": "npm run clean && npm run lint && npm run build:esm:merge && npm run build:cjs:merge && npm run build:umd",
+    "build:cjs": "cross-env MOD_ENV=cjs babel --extensions .js src -d lib",
+    "build:esm": "cross-env MOD_ENV=esm babel --extensions .js src -d es",
+    "build:cjs:merge": "cross-env NODE_ENV=development MOD_ENV=cjs webpack --config webpack.config.js",
+    "build:esm:merge": "cross-env NODE_ENV=development MOD_ENV=esm webpack --config webpack.config.js",
+    "build:umd": "npm run build:umd:dev && npm run build:umd:prod",
+    "build:umd:dev": "cross-env NODE_ENV=development MOD_ENV=umd webpack --config webpack.config.js",
+    "build:umd:prod": "cross-env NODE_ENV=production MOD_ENV=umd webpack --config webpack.config.js",
+    "example:prod": "rimraf docs && webpack --mode production --config ./example/webpack.config.js",
+    "example:dev": "webpack server  --mode development --config ./example/webpack.config.js",
+    "clean": "rimraf lib && rimraf dist && rimraf es",
+    "lint": "eslint . --ext .js",
+    "test": "rimraf coverage && jest ./test.js",
+    "analyz": "rimraf stats.json && npm run clean:stats && webpack --profile --json > stats.json && webpack-bundle-analyzer ./stats.json"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/huangjs888/d3-chart.git"
-  },
+  "files": [
+    "es",
+    "dist",
+    "lib",
+    "README.md"
+  ],
   "keywords": [
     "huangjs",
     "huangjs888",
@@ -42,35 +45,47 @@
     "d3-line",
     "d3-heatmap"
   ],
-  "author": "Huangjs",
-  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/huangjs888/d3-chart.git"
+  },
   "bugs": {
     "url": "https://github.com/huangjs888/d3-chart/issues"
   },
   "homepage": "https://github.com/huangjs888/d3-chart#readme",
-  "dependencies": {
-    "d3": "^7.1.1",
-    "lodash": "^4.17.21"
+  "author": {
+    "name": "Huangjs",
+    "email": "1170384651@qq.com"
   },
+  "license": "MIT",
   "devDependencies": {
     "@babel/cli": "^7.15.7",
     "@babel/core": "^7.15.8",
+    "@babel/eslint-parser": "^7.15.8",
     "@babel/plugin-transform-runtime": "^7.15.8",
     "@babel/preset-env": "^7.15.8",
-    "@babel/runtime-corejs3": "^7.15.4",
     "babel-loader": "^8.2.3",
+    "cross-env": "^7.0.3",
     "css-loader": "^6.5.0",
     "eslint": "^8.1.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.2.1",
     "html-webpack-plugin": "^5.5.0",
     "jest": "^27.3.1",
     "jest-canvas-mock": "^2.3.1",
     "less": "^4.1.2",
     "less-loader": "^10.2.0",
     "mini-css-extract-plugin": "^2.4.3",
+    "prettier": "^2.8.1",
     "style-loader": "^3.3.1",
     "webpack": "^5.60.0",
     "webpack-bundle-analyzer": "^4.5.0",
     "webpack-cli": "^4.9.1",
     "webpack-dev-server": "^4.3.1"
+  },
+  "dependencies": {
+    "@babel/runtime-corejs3": "^7.15.4",
+    "d3": "^7.1.1",
+    "lodash": "^4.17.21"
   }
 }
