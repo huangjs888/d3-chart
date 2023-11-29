@@ -11,7 +11,7 @@ function _extends() { _extends = Object.assign ? Object.assign.bind() : function
  * @Author: Huangjs
  * @Date: 2021-12-07 15:02:48
  * @LastEditors: Huangjs
- * @LastEditTime: 2023-08-21 13:43:05
+ * @LastEditTime: 2023-10-24 14:21:19
  * @Description: 按需生成HeatMap构造器
  */
 
@@ -21,6 +21,7 @@ import LineGraph from '../LineGraph';
 import * as util from '../util';
 const iconSize = 18;
 const prefixSIFormat = d3.format('~s');
+// 折半查找指定像素val在数组arr的哪个像素范围内
 const searchValIndex = (val, arr) => {
   let n1 = 0;
   let n2 = arr.length;
@@ -507,6 +508,14 @@ export default function generateHeatMap(superName) {
         contextmenu$$.call(null, e, ...args);
         lineMark.forEach(lm => lm.node() && lm.style('display', 'none'));
       };
+      const zoomstart$$ = this.zoomstart$;
+      this.zoomstart$ = (e, ...args) => {
+        zoomstart$$.call(null, e, ...args);
+        if (this.debounceDrawend$) {
+          // 每次开始前把上一次结束时需要调用的取消掉，防止调用两次有闪动
+          this.debounceDrawend$.cancel();
+        }
+      };
       const zooming$$ = this.zooming$;
       this.zooming$ = (e, ...args) => {
         zooming$$.call(null, e, ...args);
@@ -524,7 +533,7 @@ export default function generateHeatMap(superName) {
         });
       };
       const zoomend$$ = this.zoomend$;
-      this.debounceDrawend$ = util.debounce(drawend, 450, {
+      this.debounceDrawend$ = util.debounce(drawend, 300, {
         leading: false,
         trailing: true
       });
@@ -542,6 +551,7 @@ export default function generateHeatMap(superName) {
           xScale,
           yScale
         });
+        // 用户自己调用渲染的时候，可以在下一事件循环立即调用
         if (!e.sourceEvent || e.sourceEvent.type === 'call') {
           util.delay(() => {
             this.debounceDrawend$.flush();

@@ -1388,7 +1388,7 @@ var _excluded = ["data", "tooltip", "legend", "scale"],
  * @Author: Huangjs
  * @Date: 2021-12-07 15:02:48
  * @LastEditors: Huangjs
- * @LastEditTime: 2023-08-21 13:43:05
+ * @LastEditTime: 2023-10-24 14:21:19
  * @Description: 按需生成HeatMap构造器
  */
 
@@ -1398,6 +1398,7 @@ var _excluded = ["data", "tooltip", "legend", "scale"],
 
 var iconSize = 18;
 var prefixSIFormat = d3__WEBPACK_IMPORTED_MODULE_8__.format('~s');
+// 折半查找指定像素val在数组arr的哪个像素范围内
 var searchValIndex = function searchValIndex(val, arr) {
   var n1 = 0;
   var n2 = arr.length;
@@ -1947,13 +1948,25 @@ function generateHeatMap(superName) {
           return lm.node() && lm.style('display', 'none');
         });
       };
-      var zooming$$ = _this.zooming$;
-      _this.zooming$ = function (e) {
+      var zoomstart$$ = _this.zoomstart$;
+      _this.zoomstart$ = function (e) {
         var _context8;
         for (var _len5 = arguments.length, args = new Array(_len5 > 1 ? _len5 - 1 : 0), _key5 = 1; _key5 < _len5; _key5++) {
           args[_key5 - 1] = arguments[_key5];
         }
-        zooming$$.call.apply(zooming$$, _babel_runtime_corejs3_core_js_instance_concat__WEBPACK_IMPORTED_MODULE_7___default()(_context8 = [null, e]).call(_context8, args));
+        zoomstart$$.call.apply(zoomstart$$, _babel_runtime_corejs3_core_js_instance_concat__WEBPACK_IMPORTED_MODULE_7___default()(_context8 = [null, e]).call(_context8, args));
+        if (_this.debounceDrawend$) {
+          // 每次开始前把上一次结束时需要调用的取消掉，防止调用两次有闪动
+          _this.debounceDrawend$.cancel();
+        }
+      };
+      var zooming$$ = _this.zooming$;
+      _this.zooming$ = function (e) {
+        var _context9;
+        for (var _len6 = arguments.length, args = new Array(_len6 > 1 ? _len6 - 1 : 0), _key6 = 1; _key6 < _len6; _key6++) {
+          args[_key6 - 1] = arguments[_key6];
+        }
+        zooming$$.call.apply(zooming$$, _babel_runtime_corejs3_core_js_instance_concat__WEBPACK_IMPORTED_MODULE_7___default()(_context9 = [null, e]).call(_context9, args));
         var _e$scaleAxis2 = e.scaleAxis,
           x = _e$scaleAxis2.x,
           x2 = _e$scaleAxis2.x2,
@@ -1967,16 +1980,16 @@ function generateHeatMap(superName) {
         });
       };
       var zoomend$$ = _this.zoomend$;
-      _this.debounceDrawend$ = _util__WEBPACK_IMPORTED_MODULE_11__.debounce(drawend, 450, {
+      _this.debounceDrawend$ = _util__WEBPACK_IMPORTED_MODULE_11__.debounce(drawend, 300, {
         leading: false,
         trailing: true
       });
       _this.zoomend$ = function (e) {
-        var _context9;
-        for (var _len6 = arguments.length, args = new Array(_len6 > 1 ? _len6 - 1 : 0), _key6 = 1; _key6 < _len6; _key6++) {
-          args[_key6 - 1] = arguments[_key6];
+        var _context10;
+        for (var _len7 = arguments.length, args = new Array(_len7 > 1 ? _len7 - 1 : 0), _key7 = 1; _key7 < _len7; _key7++) {
+          args[_key7 - 1] = arguments[_key7];
         }
-        zoomend$$.call.apply(zoomend$$, _babel_runtime_corejs3_core_js_instance_concat__WEBPACK_IMPORTED_MODULE_7___default()(_context9 = [null, e]).call(_context9, args));
+        zoomend$$.call.apply(zoomend$$, _babel_runtime_corejs3_core_js_instance_concat__WEBPACK_IMPORTED_MODULE_7___default()(_context10 = [null, e]).call(_context10, args));
         var _e$scaleAxis3 = e.scaleAxis,
           x = _e$scaleAxis3.x,
           x2 = _e$scaleAxis3.x2,
@@ -1988,6 +2001,7 @@ function generateHeatMap(superName) {
           xScale: xScale,
           yScale: yScale
         });
+        // 用户自己调用渲染的时候，可以在下一事件循环立即调用
         if (!e.sourceEvent || e.sourceEvent.type === 'call') {
           _util__WEBPACK_IMPORTED_MODULE_11__.delay(function () {
             _this.debounceDrawend$.flush();
@@ -1996,19 +2010,19 @@ function generateHeatMap(superName) {
       };
       var resize$$ = _this.resize$;
       _this.resize$ = function (e, _ref12) {
-        var _context10;
+        var _context11;
         var width = _ref12.width,
           height = _ref12.height,
           padding = _ref12.padding,
           rest = (0,_babel_runtime_corejs3_helpers_objectWithoutPropertiesLoose__WEBPACK_IMPORTED_MODULE_0__["default"])(_ref12, _excluded3);
-        for (var _len7 = arguments.length, args = new Array(_len7 > 2 ? _len7 - 2 : 0), _key7 = 2; _key7 < _len7; _key7++) {
-          args[_key7 - 2] = arguments[_key7];
+        for (var _len8 = arguments.length, args = new Array(_len8 > 2 ? _len8 - 2 : 0), _key8 = 2; _key8 < _len8; _key8++) {
+          args[_key8 - 2] = arguments[_key8];
         }
-        resize$$.call.apply(resize$$, _babel_runtime_corejs3_core_js_instance_concat__WEBPACK_IMPORTED_MODULE_7___default()(_context10 = [null, e, (0,_babel_runtime_corejs3_helpers_extends__WEBPACK_IMPORTED_MODULE_3__["default"])({
+        resize$$.call.apply(resize$$, _babel_runtime_corejs3_core_js_instance_concat__WEBPACK_IMPORTED_MODULE_7___default()(_context11 = [null, e, (0,_babel_runtime_corejs3_helpers_extends__WEBPACK_IMPORTED_MODULE_3__["default"])({
           width: width,
           height: height,
           padding: padding
-        }, rest)]).call(_context10, args));
+        }, rest)]).call(_context11, args));
         zCanvasParent.style('width', width + "px").style('height', height + "px").style('top', padding[0] + "px").style('left', padding[3] + "px");
         zCanvas.attr('width', width).attr('height', height);
         heatLabel.attr('transform', "translate(" + (_this.scale.y ? 10 : width - 10) + "," + (_this.scale.x ? baselineDelt - padding[0] : height + padding[2] - iconSize + baselineDelt) + ")");
@@ -2122,12 +2136,12 @@ function generateHeatMap(superName) {
         var zval = [];
         // xval在数据范围之内才可计算出zval
         if (xval >= heatData.x[0] && xval <= heatData.x[heatData.x.length - 1]) {
-          var _context11;
+          var _context12;
           var xi = _util__WEBPACK_IMPORTED_MODULE_11__.findNearIndex(xval, heatData.x, !average);
           if (!average) xi = [xi, xi];
           var xBin = 0;
           if (xi[0] !== xi[1]) xBin = (xval - heatData.x[xi[0]]) / (heatData.x[xi[1]] - heatData.x[xi[0]]);
-          zval = _babel_runtime_corejs3_core_js_instance_map__WEBPACK_IMPORTED_MODULE_5___default()(_context11 = heatData.z).call(_context11, function (v) {
+          zval = _babel_runtime_corejs3_core_js_instance_map__WEBPACK_IMPORTED_MODULE_5___default()(_context12 = heatData.z).call(_context12, function (v) {
             var vv = v || [];
             return xBin * ((vv[xi[1]] || 0) - (vv[xi[0]] || 0)) + (vv[xi[0]] || 0);
           });
@@ -2145,12 +2159,12 @@ function generateHeatMap(superName) {
         var _zval = [];
         // yval在数据范围之内才可计算出zval
         if (yval >= heatData.y[0] && yval <= heatData.y[heatData.y.length - 1]) {
-          var _context12;
+          var _context13;
           var yi = _util__WEBPACK_IMPORTED_MODULE_11__.findNearIndex(yval, heatData.y, !average);
           if (!average) yi = [yi, yi];
           var yBin = 0;
           if (yi[0] !== yi[1]) yBin = (yval - heatData.y[yi[0]]) / (heatData.y[yi[1]] - heatData.y[yi[0]]);
-          _zval = _babel_runtime_corejs3_core_js_instance_map__WEBPACK_IMPORTED_MODULE_5___default()(_context12 = heatData.z[yi[0]] || []).call(_context12, function (v0, i) {
+          _zval = _babel_runtime_corejs3_core_js_instance_map__WEBPACK_IMPORTED_MODULE_5___default()(_context13 = heatData.z[yi[0]] || []).call(_context13, function (v0, i) {
             var v1 = (heatData.z[yi[1]] || [])[i] || 0;
             return yBin * (v1 - v0) + v0;
           });
@@ -2189,8 +2203,8 @@ function generateHeatMap(superName) {
         var domains = {};
         needDomain.forEach(function (key) {
           if (heatData[key] && heatData[key].length > 0) {
-            var _context13;
-            domains[key] = d3__WEBPACK_IMPORTED_MODULE_8__.extent(_babel_runtime_corejs3_core_js_instance_concat__WEBPACK_IMPORTED_MODULE_7___default()(_context13 = []).call(_context13, heatData[key]));
+            var _context14;
+            domains[key] = d3__WEBPACK_IMPORTED_MODULE_8__.extent(_babel_runtime_corejs3_core_js_instance_concat__WEBPACK_IMPORTED_MODULE_7___default()(_context14 = []).call(_context14, heatData[key]));
           }
         });
         return domains;
